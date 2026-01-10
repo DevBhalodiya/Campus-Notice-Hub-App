@@ -1,168 +1,261 @@
-import React, { useState } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Button } from '@/components/common/Button';
+import { Card } from '@/components/common/Card';
+import { Notice, NoticeCard } from '@/components/notices/NoticeCard';
+import { Colors } from '@/constants/colors';
+import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const categories = ['Exam', 'Events', 'Fees', 'Holidays'];
+const mockNotices: Notice[] = [
+  {
+    id: '1',
+    title: 'Mid-Semester Examination Schedule Released',
+    content: 'The schedule for mid-semester examinations has been released.',
+    category: 'exam',
+    date: '10 Jan',
+    time: '09:30 AM',
+    author: 'Dr. Admin',
+  },
+  {
+    id: '2',
+    title: 'Annual Tech Fest 2026 - Registration Open',
+    content: 'Join us for the biggest tech fest of the year!',
+    category: 'events',
+    date: '09 Jan',
+    time: '02:15 PM',
+    author: 'Dr. Admin',
+  },
+];
 
-const AdminDashboard = () => {
-  const [notice, setNotice] = useState('');
-  const [category, setCategory] = useState(categories[0]);
-  const [notices, setNotices] = useState([
-    { id: '1', title: 'Exam Timetable Released', category: 'Exam' },
-    { id: '2', title: 'Annual Fest on 20th Jan', category: 'Events' },
-  ]);
+export default function AdminDashboard() {
+  const router = useRouter();
 
-  const postNotice = () => {
-    if (notice.trim()) {
-      setNotices([
-        { id: Date.now().toString(), title: notice, category },
-        ...notices,
-      ]);
-      setNotice('');
-    }
+  const stats = [
+    { id: '1', label: 'Total Notices', value: '48', icon: 'document-text', color: Colors.primary },
+    { id: '2', label: 'Active Students', value: '1,234', icon: 'people', color: Colors.success },
+    { id: '3', label: 'Today\'s Posts', value: '5', icon: 'calendar', color: Colors.warning },
+    { id: '4', label: 'Total Views', value: '12.5K', icon: 'eye', color: Colors.info },
+  ];
+
+  const quickActions = [
+    { id: '1', icon: 'add-circle', title: 'New Notice', color: Colors.primary, route: '/admin-create-notice' },
+    { id: '2', icon: 'list', title: 'All Notices', color: Colors.secondary, route: '/admin-all-notices' },
+    { id: '3', icon: 'bar-chart', title: 'Analytics', color: Colors.success, route: '/admin-analytics' },
+    { id: '4', icon: 'settings', title: 'Settings', color: Colors.warning, route: '/admin-settings' },
+  ];
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => router.replace('/login'),
+        },
+      ]
+    );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Admin Dashboard</Text>
-      <View style={styles.form}>
-        <Text style={styles.label}>Notice</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter notice..."
-          value={notice}
-          onChangeText={setNotice}
-        />
-        <View style={styles.categoryRow}>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.categoryButton, category === cat && styles.selectedCategory]}
-              onPress={() => setCategory(cat)}
-            >
-              <Text style={styles.categoryText}>{cat}</Text>
-            </TouchableOpacity>
-          ))}
+      <StatusBar style="light" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Welcome, Admin! 👋</Text>
+          <Text style={styles.subtitle}>Manage campus notices</Text>
         </View>
-        <TouchableOpacity style={styles.postButton} onPress={postNotice}>
-          <Text style={styles.postText}>Post Notice</Text>
+        <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={24} color={Colors.white} />
         </TouchableOpacity>
       </View>
-      <Text style={styles.sectionTitle}>Posted Notices</Text>
-      <FlatList
-        data={notices}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.noticeItem}>
-            <Text style={styles.noticeTitle}>{item.title}</Text>
-            <Text style={styles.noticeCategory}>{item.category}</Text>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          {stats.map((stat) => (
+            <Card key={stat.id} style={styles.statCard}>
+              <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
+                <Ionicons name={stat.icon as any} size={24} color={stat.color} />
+              </View>
+              <Text style={styles.statValue}>{stat.value}</Text>
+              <Text style={styles.statLabel}>{stat.label}</Text>
+            </Card>
+          ))}
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsGrid}>
+            {quickActions.map((action) => (
+              <TouchableOpacity
+                key={action.id}
+                style={styles.actionCard}
+                onPress={() => router.push(action.route as any)}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+                  <Ionicons name={action.icon as any} size={28} color={action.color} />
+                </View>
+                <Text style={styles.actionTitle}>{action.title}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        )}
-        style={styles.noticeList}
-      />
+        </View>
+
+        {/* Recent Notices */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Notices</Text>
+            <TouchableOpacity onPress={() => router.push('/admin-all-notices')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          {mockNotices.map((notice) => (
+            <NoticeCard
+              key={notice.id}
+              notice={notice}
+              onPress={() => router.push(`/admin-edit-notice?id=${notice.id}`)}
+            />
+          ))}
+        </View>
+
+        {/* Create Notice Button */}
+        <Button
+          title="Create New Notice"
+          onPress={() => router.push('/admin-create-notice')}
+          size="lg"
+          fullWidth
+          style={styles.createButton}
+        />
+      </ScrollView>
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6fa',
-    padding: 20,
+    backgroundColor: Colors.background,
   },
   header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#222f3e',
-    marginBottom: 24,
-    alignSelf: 'center',
-  },
-  form: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  label: {
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#222f3e',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d8e0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 12,
-    backgroundColor: '#f7f7f7',
-  },
-  categoryRow: {
     flexDirection: 'row',
-    marginBottom: 12,
     justifyContent: 'space-between',
-  },
-  categoryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    backgroundColor: '#d1d8e0',
-    marginHorizontal: 2,
-  },
-  selectedCategory: {
-    backgroundColor: '#3867d6',
-  },
-  categoryText: {
-    color: '#222f3e',
-    fontWeight: '600',
-  },
-  postButton: {
-    backgroundColor: '#3867d6',
-    borderRadius: 10,
-    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 4,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.xxl,
+    backgroundColor: Colors.primary,
   },
-  postText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  greeting: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.bold,
+    color: Colors.white,
+  },
+  subtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.white,
+    opacity: 0.9,
+    marginTop: Spacing.xs,
+  },
+  profileButton: {
+    padding: Spacing.sm,
+    backgroundColor: Colors.primaryDark,
+    borderRadius: BorderRadius.md,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+    marginBottom: Spacing.xxl,
+  },
+  statCard: {
+    width: '48%',
+    alignItems: 'center',
+    paddingVertical: Spacing.lg,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  statValue: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
+  },
+  statLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  section: {
+    marginBottom: Spacing.xxl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#222f3e',
+    fontSize: FontSize.xl,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
   },
-  noticeList: {
-    flex: 1,
+  seeAll: {
+    fontSize: FontSize.sm,
+    color: Colors.primary,
+    fontWeight: FontWeight.semibold,
   },
-  noticeItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
+  actionsGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: Spacing.md,
+  },
+  actionCard: {
+    width: '48%',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.03,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 1,
+    elevation: 2,
   },
-  noticeTitle: {
-    fontWeight: '600',
-    color: '#222f3e',
-    flex: 1,
+  actionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.sm,
   },
-  noticeCategory: {
-    color: '#3867d6',
-    fontWeight: 'bold',
-    marginLeft: 12,
+  actionTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  createButton: {
+    marginBottom: Spacing.xxxl,
   },
 });
-
-export default AdminDashboard;

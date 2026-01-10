@@ -7,28 +7,45 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function LoginScreen() {
+
+export default function SignupScreen() {
   const router = useRouter();
   const [role, setRole] = useState<'admin' | 'student'>('student');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
-    if (!email || !password) return;
-    
+  const handleSignup = async () => {
+    if (!fullName || !email || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
-      if (role === 'admin') {
-        router.replace('/admin-dashboard');
-      } else {
-        router.replace('/student-home');
-      }
+      Alert.alert('Success', 'Account created successfully!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/login'),
+        },
+      ]);
     }, 1000);
   };
 
@@ -46,13 +63,16 @@ export default function LoginScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+            </TouchableOpacity>
             <View style={styles.logoContainer}>
               <View style={styles.logo}>
                 <Ionicons name="notifications" size={32} color={Colors.primary} />
               </View>
             </View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue to Campus Notice Hub</Text>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join Campus Notice Hub today</Text>
           </View>
 
           {/* Role Toggle */}
@@ -65,6 +85,13 @@ export default function LoginScreen() {
           {/* Form */}
           <View style={styles.form}>
             <Input
+              label="Full Name"
+              placeholder="Enter your full name"
+              value={fullName}
+              onChangeText={setFullName}
+              icon="person-outline"
+            />
+            <Input
               label="Email Address"
               placeholder="Enter your email"
               value={email}
@@ -75,20 +102,24 @@ export default function LoginScreen() {
             />
             <Input
               label="Password"
-              placeholder="Enter your password"
+              placeholder="Create a password"
               value={password}
               onChangeText={setPassword}
               isPassword
               icon="lock-closed-outline"
             />
-
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            <Input
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              isPassword
+              icon="lock-closed-outline"
+            />
 
             <Button
-              title="Sign In"
-              onPress={handleLogin}
+              title="Create Account"
+              onPress={handleSignup}
               loading={loading}
               fullWidth
               size="lg"
@@ -97,9 +128,9 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => router.push('/signup')}>
-              <Text style={styles.signupLink}>Sign Up</Text>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Text style={styles.loginLink}>Sign In</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -119,14 +150,20 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: Spacing.xxl,
-    paddingTop: Spacing.xxxl,
+    paddingTop: Spacing.xxl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: Spacing.xxxl,
+    marginBottom: Spacing.xxl,
+  },
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    padding: Spacing.sm,
   },
   logoContainer: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   logo: {
     width: 70,
@@ -148,19 +185,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   roleToggle: {
-    marginBottom: Spacing.xxxl,
+    marginBottom: Spacing.xxl,
   },
   form: {
-    marginBottom: Spacing.xl,
-  },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: Spacing.xl,
-  },
-  forgotPasswordText: {
-    fontSize: FontSize.sm,
-    color: Colors.primary,
-    fontWeight: FontWeight.semibold,
+    marginBottom: Spacing.lg,
   },
   footer: {
     flexDirection: 'row',
@@ -172,7 +200,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     color: Colors.textSecondary,
   },
-  signupLink: {
+  loginLink: {
     fontSize: FontSize.md,
     color: Colors.primary,
     fontWeight: FontWeight.semibold,

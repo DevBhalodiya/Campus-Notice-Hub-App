@@ -1,2 +1,4 @@
-// App-wide constants
-export const NOTICE_CATEGORIES = ['Exam', 'Events', 'Fees', 'Holidays'];
+// Re-export all constants
+export * from './colors';
+export * from './spacing';
+
