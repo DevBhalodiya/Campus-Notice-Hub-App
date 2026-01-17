@@ -6,14 +6,16 @@ import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { signupUser, UserRole } from '@/components/auth/authHelpers';
 
 
 export default function SignupScreen() {
   const router = useRouter();
-  const [role, setRole] = useState<'admin' | 'student'>('student');
+  const [role, setRole] = useState<'admin' | 'student' | 'faculty'>('student');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,28 +27,32 @@ export default function SignupScreen() {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-
     if (password !== confirmPassword) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
-
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');
       return;
     }
-
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signupUser(fullName, email, password, role);
+      Alert.alert(
+        'Verification Email Sent',
+        'A verification email has been sent. Please check your inbox and spam folder.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/login'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert('Signup Error', error.message || 'An error occurred during signup.');
+    } finally {
       setLoading(false);
-      Alert.alert('Success', 'Account created successfully!', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/login'),
-        },
-      ]);
-    }, 1000);
+    }
   };
 
   return (

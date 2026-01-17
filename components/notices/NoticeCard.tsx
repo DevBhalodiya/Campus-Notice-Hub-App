@@ -10,11 +10,12 @@ export interface Notice {
   id: string;
   title: string;
   content: string;
-  category: 'exam' | 'events' | 'fees' | 'holidays' | 'general';
+  category: string; // allow custom categories for faculty
   date: string;
   time: string;
   isRead?: boolean;
   author: string;
+  status?: 'Pending' | 'Approved' | 'Rejected'; // for faculty approval flow
 }
 
 interface NoticeCardProps {

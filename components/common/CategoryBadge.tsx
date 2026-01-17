@@ -11,7 +11,7 @@ interface CategoryBadgeProps {
 }
 
 export const CategoryBadge: React.FC<CategoryBadgeProps> = ({ category, size = 'md' }) => {
-  const colors = CategoryColors[category];
+  const colors = CategoryColors[category] || { bg: '#E5E7EB', text: '#374151', border: '#D1D5DB' };
 
   return (
     <View

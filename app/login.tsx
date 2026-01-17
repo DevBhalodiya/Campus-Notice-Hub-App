@@ -6,30 +6,49 @@ import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { loginUser, UserRole } from '@/components/auth/authHelpers';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [role, setRole] = useState<'admin' | 'student'>('student');
+  const [role, setRole] = useState<'admin' | 'student' | 'faculty'>('student');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) return;
-    
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      if (role === 'admin') {
-        router.replace('/admin-dashboard');
-      } else {
-        router.replace('/student-home');
+    try {
+      const { role: userRole, emailVerified } = await loginUser(email, password);
+      if (!emailVerified) {
+        Alert.alert(
+          'Email Not Verified',
+          'Please verify your email address before logging in. Check your inbox for the verification link.'
+        );
+        setLoading(false);
+        return;
       }
-    }, 1000);
+      if (userRole !== role) {
+        Alert.alert('Role Mismatch', 'Selected role does not match your account role.');
+        setLoading(false);
+        return;
+      }
+      let route = '/student-home';
+      if (userRole === 'faculty') route = '/faculty-dashboard';
+      else if (userRole === 'admin') route = '/admin-dashboard';
+      router.replace(route);
+    } catch (error: any) {
+      Alert.alert('Login Error', error.message || 'An error occurred during login.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

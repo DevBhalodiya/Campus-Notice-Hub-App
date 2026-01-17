@@ -4,8 +4,8 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 interface RoleToggleProps {
-  selectedRole: 'admin' | 'student';
-  onRoleChange: (role: 'admin' | 'student') => void;
+  selectedRole: 'admin' | 'student' | 'faculty';
+  onRoleChange: (role: 'admin' | 'student' | 'faculty') => void;
   style?: ViewStyle;
 }
 
@@ -23,6 +23,18 @@ export const RoleToggle: React.FC<RoleToggleProps> = ({ selectedRole, onRoleChan
       >
         <Text style={[styles.text, selectedRole === 'student' && styles.selectedText]}>
           Student
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          selectedRole === 'faculty' && styles.selectedButton,
+        ]}
+        onPress={() => onRoleChange('faculty')}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.text, selectedRole === 'faculty' && styles.selectedText]}>
+          Faculty
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
