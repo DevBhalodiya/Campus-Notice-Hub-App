@@ -38,6 +38,7 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       await signupUser(fullName, email, password, role);
+      // Verification email sent and user signed out. Show alert and redirect to login.
       Alert.alert(
         'Verification Email Sent',
         'A verification email has been sent. Please check your inbox and spam folder.',

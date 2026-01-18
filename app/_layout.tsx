@@ -25,7 +25,9 @@ export default function RootLayout() {
         await reload(user); // Ensure latest emailVerified status
         if (!user.emailVerified) {
           await signOut(auth);
-          router.replace('/login');
+          if (segments[0] !== 'login') {
+            router.replace('/login');
+          }
           setChecking(false);
           return;
         }
@@ -33,7 +35,7 @@ export default function RootLayout() {
         let route = '/student-home';
         if (role === 'faculty') route = '/faculty-dashboard';
         else if (role === 'admin') route = '/admin-dashboard';
-        // Only redirect if not already on the correct dashboard
+        // Only allow access to dashboards if verified
         if (!segments[0] || (segments[0] !== 'student-home' && segments[0] !== 'faculty-dashboard' && segments[0] !== 'admin-dashboard')) {
           router.replace(route);
         }

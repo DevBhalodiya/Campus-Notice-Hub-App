@@ -10,7 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { loginUser, UserRole } from '@/components/auth/authHelpers';
+import { loginUser, resendVerificationEmail, UserRole } from '@/components/auth/authHelpers';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -30,7 +30,7 @@ export default function LoginScreen() {
       if (!emailVerified) {
         Alert.alert(
           'Email Not Verified',
-          'Please verify your email address before logging in. Check your inbox for the verification link.'
+          'Please verify your email address before logging in. Check your inbox and spam folder. If you did not receive the email, you can resend it below.'
         );
         setLoading(false);
         return;
@@ -48,6 +48,15 @@ export default function LoginScreen() {
       Alert.alert('Login Error', error.message || 'An error occurred during login.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      await resendVerificationEmail();
+      Alert.alert('Verification Email Sent', 'A new verification email has been sent. Please check your inbox and spam folder.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to resend verification email.');
     }
   };
 
@@ -111,6 +120,13 @@ export default function LoginScreen() {
               loading={loading}
               fullWidth
               size="lg"
+            />
+            <Button
+              title="Resend Verification Email"
+              onPress={handleResendVerification}
+              style={{ marginTop: 12 }}
+              variant="outline"
+              size="md"
             />
           </View>
 
