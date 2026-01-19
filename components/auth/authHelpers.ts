@@ -1,6 +1,7 @@
 import { auth, db } from "@/constants/firebase";
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
   reload,
   sendEmailVerification,
   signInWithEmailAndPassword,
@@ -21,6 +22,8 @@ export async function signupUser(
   let userCredential: UserCredential | null = null;
 
   try {
+    console.log(`[SIGNUP START] Creating user with role: ${role}`);
+
     // Step 1: Create the user account
     userCredential = await createUserWithEmailAndPassword(
       auth,
@@ -29,61 +32,77 @@ export async function signupUser(
     );
     const { user } = userCredential;
 
-    console.log("User created:", user.uid);
+    console.log(`[SIGNUP] User created with UID: ${user.uid}`);
 
     // Step 2: Create Firestore document BEFORE sending verification email
-    // This must happen while the user is still authenticated
     try {
-      await setDoc(
-        doc(db, "users", user.uid),
-        {
-          name,
-          email,
-          role,
-          emailVerified: false,
-          createdAt: serverTimestamp(),
-        },
-        { merge: false },
-      ); // Use merge: false to ensure we're creating, not updating
+      console.log(`[SIGNUP] Creating Firestore document for ${role}...`);
 
-      console.log("Firestore document created successfully");
+      await setDoc(doc(db, "users", user.uid), {
+        name,
+        email,
+        role,
+        emailVerified: false,
+        createdAt: serverTimestamp(),
+      });
+
+      console.log(`[SIGNUP] Firestore document created successfully`);
     } catch (firestoreError: any) {
-      console.error("Firestore creation error:", firestoreError);
+      console.error(
+        "[SIGNUP ERROR] Firestore creation failed:",
+        firestoreError,
+      );
       console.error("Error code:", firestoreError.code);
       console.error("Error message:", firestoreError.message);
 
-      // If Firestore fails, we should delete the auth user to keep things clean
-      // But we'll let the outer catch handle the cleanup
+      // Delete the auth user if Firestore fails
+      try {
+        await deleteUser(user);
+        console.log("[SIGNUP] Auth user deleted after Firestore failure");
+      } catch (deleteError) {
+        console.error(
+          "[SIGNUP ERROR] Failed to delete auth user:",
+          deleteError,
+        );
+      }
+
       throw new Error(
-        `Failed to create user profile: ${firestoreError.message}`,
+        `Failed to create user profile. Please check your internet connection and try again. (${firestoreError.code})`,
       );
     }
 
     // Step 3: Send verification email
     try {
+      console.log(`[SIGNUP] Sending verification email...`);
       await sendEmailVerification(user);
-      console.log("Verification email sent to", user.email);
+      console.log(`[SIGNUP] Verification email sent to ${user.email}`);
     } catch (emailError: any) {
-      console.error("Email verification error:", emailError);
+      console.error("[SIGNUP ERROR] Email verification error:", emailError);
       // Don't throw here - the account was created successfully
-      // Just log the error and continue
       console.warn(
-        "Verification email could not be sent, but account was created",
+        "[SIGNUP] Verification email could not be sent, but account was created",
       );
     }
 
     // Step 4: Sign out the user
     await signOut(auth);
-    console.log("User signed out successfully");
+    console.log("[SIGNUP] User signed out successfully");
+    console.log("[SIGNUP COMPLETE] Process finished successfully");
   } catch (error: any) {
-    console.error("Signup error:", error);
+    console.error("[SIGNUP ERROR] Fatal error:", error);
+    console.error("Error code:", error.code);
+    console.error("Error message:", error.message);
 
     // Clean up: if user was created but something failed, sign them out
-    if (userCredential && auth.currentUser) {
+    if (auth.currentUser) {
       try {
         await signOut(auth);
+        console.log("[SIGNUP] User signed out during error cleanup");
       } catch (signOutError) {
-        console.error("Error during cleanup signout:", signOutError);
+        console.error(
+          "[SIGNUP ERROR] Error during cleanup signout:",
+          signOutError,
+        );
       }
     }
 
