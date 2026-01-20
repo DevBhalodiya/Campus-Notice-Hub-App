@@ -36,14 +36,17 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!fullName || !email || !password || !confirmPassword) {
+    // Validation
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
+
     if (password !== confirmPassword) {
       Alert.alert("Error", "Passwords do not match");
       return;
     }
+
     if (password.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters");
       return;
@@ -54,28 +57,35 @@ export default function SignupScreen() {
     console.log("Email:", email);
 
     try {
-      await signupUser(fullName, email, password, role);
+      // Perform signup
+      await signupUser(fullName.trim(), email.trim(), password, role);
 
-      // Stop loading immediately after successful signup
+      // Signup successful - stop loading
       setLoading(false);
 
-      // Show success alert with navigation
+      // Show success alert and navigate to login
       Alert.alert(
         "Success! 🎉",
-        `A verification email has been sent to ${email}.\n\nPlease verify your email before logging in.\n\nCheck your inbox and spam folder.`,
+        `Account created successfully!\n\nA verification email has been sent to ${email}.\n\nPlease verify your email before logging in.\n\nCheck your inbox and spam folder.`,
         [
           {
             text: "Go to Login",
             onPress: () => {
-              // Use replace to prevent going back to signup
+              // Clear form
+              setFullName("");
+              setEmail("");
+              setPassword("");
+              setConfirmPassword("");
+              // Navigate to login
               router.replace("/login");
             },
           },
         ],
-        { cancelable: false }, // Prevent dismissing without clicking button
+        { cancelable: false },
       );
     } catch (error: any) {
-      setLoading(false); // Stop loading on error
+      // Stop loading on error
+      setLoading(false);
 
       console.error("=== SIGNUP ERROR ===");
       console.error("Error object:", error);
@@ -91,12 +101,14 @@ export default function SignupScreen() {
         errorMessage = "Invalid email address format.";
       } else if (error.code === "auth/weak-password") {
         errorMessage = "Password is too weak. Please use a stronger password.";
+      } else if (error.code === "auth/network-request-failed") {
+        errorMessage = "Network error. Please check your internet connection.";
       } else if (
         error.code === "permission-denied" ||
         (error.message && error.message.includes("permission"))
       ) {
         errorMessage =
-          "Permission denied while creating user profile. Please check your internet connection and try again.";
+          "Permission denied. Please check your internet connection and try again.";
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -146,7 +158,7 @@ export default function SignupScreen() {
           {/* Role Toggle */}
           <RoleToggle
             selectedRole={role}
-            onRoleChange={setRole}
+            onRoleChange={(newRole) => !loading && setRole(newRole)}
             style={styles.roleToggle}
           />
 
@@ -159,6 +171,7 @@ export default function SignupScreen() {
               onChangeText={setFullName}
               icon="person-outline"
               editable={!loading}
+              autoCapitalize="words"
             />
             <Input
               label="Email Address"
@@ -193,6 +206,7 @@ export default function SignupScreen() {
               title={loading ? "Creating Account..." : "Create Account"}
               onPress={handleSignup}
               loading={loading}
+              disabled={loading}
               fullWidth
               size="lg"
             />

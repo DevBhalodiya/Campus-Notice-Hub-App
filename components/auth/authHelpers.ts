@@ -1,4 +1,5 @@
 import { auth, db } from "@/constants/firebase";
+import { setSigningUp } from "@/utils/authStateManager";
 import {
   createUserWithEmailAndPassword,
   deleteUser,
@@ -20,9 +21,13 @@ export async function signupUser(
   role: UserRole,
 ): Promise<void> {
   let userCredential: UserCredential | null = null;
+  let userCreated = false;
 
   try {
     console.log(`[SIGNUP START] Creating user with role: ${role}`);
+
+    // Set the signing up flag to prevent layout navigation
+    setSigningUp(true);
 
     // Step 1: Create the user account
     userCredential = await createUserWithEmailAndPassword(
@@ -31,10 +36,11 @@ export async function signupUser(
       password,
     );
     const { user } = userCredential;
+    userCreated = true;
 
     console.log(`[SIGNUP] User created with UID: ${user.uid}`);
 
-    // Step 2: Create Firestore document BEFORE sending verification email
+    // Step 2: Create Firestore document
     try {
       console.log(`[SIGNUP] Creating Firestore document for ${role}...`);
 
@@ -56,14 +62,17 @@ export async function signupUser(
       console.error("Error message:", firestoreError.message);
 
       // Delete the auth user if Firestore fails
-      try {
-        await deleteUser(user);
-        console.log("[SIGNUP] Auth user deleted after Firestore failure");
-      } catch (deleteError) {
-        console.error(
-          "[SIGNUP ERROR] Failed to delete auth user:",
-          deleteError,
-        );
+      if (userCreated) {
+        try {
+          await deleteUser(user);
+          console.log("[SIGNUP] Auth user deleted after Firestore failure");
+          userCreated = false;
+        } catch (deleteError) {
+          console.error(
+            "[SIGNUP ERROR] Failed to delete auth user:",
+            deleteError,
+          );
+        }
       }
 
       throw new Error(
@@ -78,13 +87,13 @@ export async function signupUser(
       console.log(`[SIGNUP] Verification email sent to ${user.email}`);
     } catch (emailError: any) {
       console.error("[SIGNUP ERROR] Email verification error:", emailError);
-      // Don't throw here - the account was created successfully
       console.warn(
         "[SIGNUP] Verification email could not be sent, but account was created",
       );
     }
 
-    // Step 4: Sign out the user
+    // Step 4: Sign out the user immediately
+    console.log("[SIGNUP] Signing out user...");
     await signOut(auth);
     console.log("[SIGNUP] User signed out successfully");
     console.log("[SIGNUP COMPLETE] Process finished successfully");
@@ -93,9 +102,10 @@ export async function signupUser(
     console.error("Error code:", error.code);
     console.error("Error message:", error.message);
 
-    // Clean up: if user was created but something failed, sign them out
-    if (auth.currentUser) {
+    // Clean up: if user was created but something failed, try to delete and sign them out
+    if (userCreated && auth.currentUser) {
       try {
+        console.log("[SIGNUP] Cleaning up - signing out user");
         await signOut(auth);
         console.log("[SIGNUP] User signed out during error cleanup");
       } catch (signOutError) {
@@ -108,6 +118,9 @@ export async function signupUser(
 
     // Re-throw the error with more context
     throw error;
+  } finally {
+    // Always clear the signing up flag
+    setSigningUp(false);
   }
 }
 
@@ -115,29 +128,37 @@ export async function loginUser(
   email: string,
   password: string,
 ): Promise<{ role: UserRole; emailVerified: boolean }> {
-  const userCredential: UserCredential = await signInWithEmailAndPassword(
-    auth,
-    email,
-    password,
-  );
-  const { user } = userCredential;
+  try {
+    const userCredential: UserCredential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password,
+    );
+    const { user } = userCredential;
 
-  // Reload to get latest emailVerified status
-  await reload(user);
+    // Reload to get latest emailVerified status
+    await reload(user);
 
-  if (!user.emailVerified) {
-    await signOut(auth);
-    throw new Error("Please verify your email before logging in");
+    if (!user.emailVerified) {
+      await signOut(auth);
+      throw new Error("Please verify your email before logging in");
+    }
+
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      await signOut(auth);
+      throw new Error("User profile not found");
+    }
+
+    const data = userDoc.data();
+    return { role: data.role as UserRole, emailVerified: user.emailVerified };
+  } catch (error: any) {
+    // Ensure user is signed out on any error
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
+    throw error;
   }
-
-  const userDoc = await getDoc(doc(db, "users", user.uid));
-  if (!userDoc.exists()) {
-    await signOut(auth);
-    throw new Error("User profile not found");
-  }
-
-  const data = userDoc.data();
-  return { role: data.role as UserRole, emailVerified: user.emailVerified };
 }
 
 // Resend verification email for the currently logged-in user
