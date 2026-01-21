@@ -6,48 +6,75 @@ import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { collection, query, where, onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/constants/firebase';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const mockNotices: Notice[] = [
-  {
-    id: '1',
-    title: 'Mid-Semester Examination Schedule Released',
-    content: 'The schedule for mid-semester examinations has been released.',
-    category: 'exam',
-    date: '10 Jan',
-    time: '09:30 AM',
-    author: 'Dr. Admin',
-  },
-  {
-    id: '2',
-    title: 'Annual Tech Fest 2026 - Registration Open',
-    content: 'Join us for the biggest tech fest of the year!',
-    category: 'events',
-    date: '09 Jan',
-    time: '02:15 PM',
-    author: 'Dr. Admin',
-  },
-];
+type PendingNotice = {
+  id: string;
+  title: string;
+  description: string;
+  category?: string;
+  createdAt?: any;
+};
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const [pendingNotices, setPendingNotices] = useState<PendingNotice[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const q = query(collection(db, 'notices'), where('status', '==', 'pending'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const notices: PendingNotice[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }) as PendingNotice);
+      setPendingNotices(notices);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleApprove = async (noticeId: string) => {
+    if (!auth.currentUser) {
+      Alert.alert('Error', 'You must be logged in.');
+      return;
+    }
+    try {
+      await updateDoc(doc(db, 'notices', noticeId), {
+        status: 'approved',
+        approvedBy: auth.currentUser.uid,
+        approvedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to approve notice.');
+    }
+  };
+
+  const handleReject = async (noticeId: string) => {
+    try {
+      await deleteDoc(doc(db, 'notices', noticeId));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reject (delete) notice.');
+    }
+  };
+
+  // ...existing code for stats, quickActions, handleLogout
   const stats = [
     { id: '1', label: 'Total Notices', value: '48', icon: 'document-text', color: Colors.primary },
     { id: '2', label: 'Active Students', value: '1,234', icon: 'people', color: Colors.success },
-    { id: '3', label: 'Today\'s Posts', value: '5', icon: 'calendar', color: Colors.warning },
+    { id: '3', label: "Today's Posts", value: '5', icon: 'calendar', color: Colors.warning },
     { id: '4', label: 'Total Views', value: '12.5K', icon: 'eye', color: Colors.info },
   ];
-
   const quickActions = [
     { id: '1', icon: 'add-circle', title: 'New Notice', color: Colors.primary, route: '/admin-create-notice' },
     { id: '2', icon: 'list', title: 'All Notices', color: Colors.secondary, route: '/admin-all-notices' },
     { id: '3', icon: 'bar-chart', title: 'Analytics', color: Colors.success, route: '/admin-analytics' },
     { id: '4', icon: 'settings', title: 'Settings', color: Colors.warning, route: '/admin-settings' },
   ];
-
   const handleLogout = () => {
     Alert.alert(
       'Logout',
@@ -66,7 +93,6 @@ export default function AdminDashboard() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -77,13 +103,12 @@ export default function AdminDashboard() {
           <Ionicons name="log-out-outline" size={24} color={Colors.white} />
         </TouchableOpacity>
       </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
           {stats.map((stat) => (
             <Card key={stat.id} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}>
+              <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}> 
                 <Ionicons name={stat.icon as any} size={24} color={stat.color} />
               </View>
               <Text style={styles.statValue}>{stat.value}</Text>
@@ -91,7 +116,6 @@ export default function AdminDashboard() {
             </Card>
           ))}
         </View>
-
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -102,7 +126,7 @@ export default function AdminDashboard() {
                 style={styles.actionCard}
                 onPress={() => router.push(action.route as any)}
               >
-                <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}>
+                <View style={[styles.actionIcon, { backgroundColor: action.color + '20' }]}> 
                   <Ionicons name={action.icon as any} size={28} color={action.color} />
                 </View>
                 <Text style={styles.actionTitle}>{action.title}</Text>
@@ -110,24 +134,38 @@ export default function AdminDashboard() {
             ))}
           </View>
         </View>
-
-        {/* Recent Notices */}
+        {/* Pending Notices */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Notices</Text>
-            <TouchableOpacity onPress={() => router.push('/admin-all-notices')}>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>Pending Notices</Text>
           </View>
-          {mockNotices.map((notice) => (
-            <NoticeCard
-              key={notice.id}
-              notice={notice}
-              onPress={() => router.push(`/admin-edit-notice?id=${notice.id}`)}
-            />
-          ))}
+          {loading ? (
+            <Text>Loading...</Text>
+          ) : pendingNotices.length === 0 ? (
+            <Text>No pending notices.</Text>
+          ) : (
+            pendingNotices.map((notice) => (
+              <Card key={notice.id} style={{ marginBottom: 16 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{notice.title}</Text>
+                <Text style={{ marginVertical: 8 }}>{notice.description}</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Button
+                    title="Approve"
+                    size="sm"
+                    style={{ flex: 1 }}
+                    onPress={() => handleApprove(notice.id)}
+                  />
+                  <Button
+                    title="Reject"
+                    size="sm"
+                    style={{ flex: 1, backgroundColor: Colors.error }}
+                    onPress={() => handleReject(notice.id)}
+                  />
+                </View>
+              </Card>
+            ))
+          )}
         </View>
-
         {/* Create Notice Button */}
         <Button
           title="Create New Notice"

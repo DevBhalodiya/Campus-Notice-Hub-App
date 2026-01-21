@@ -6,66 +6,62 @@ import { FontSize, FontWeight, IconSize, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { db } from '@/constants/firebase';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
-const mockNotices: Notice[] = [
-  {
-    id: '1',
-    title: 'Mid-Semester Examination Schedule Released',
-    content: 'The schedule for mid-semester examinations has been released. Please check your registered courses and exam timings on the student portal.',
-    category: 'exam',
-    date: '10 Jan',
-    time: '09:30 AM',
-    author: 'Dr. Admin',
-    isRead: false,
-  },
-  {
-    id: '2',
-    title: 'Annual Tech Fest 2026 - Registration Open',
-    content: 'Join us for the biggest tech fest of the year! Register now for various competitions, workshops, and events.',
-    category: 'events',
-    date: '09 Jan',
-    time: '02:15 PM',
-    author: 'Event Committee',
-    isRead: true,
-  },
-  {
-    id: '3',
-    title: 'Semester Fee Payment Deadline Extended',
-    content: 'The deadline for semester fee payment has been extended to January 20th. Late fee will be applicable after this date.',
-    category: 'fees',
-    date: '08 Jan',
-    time: '11:00 AM',
-    author: 'Accounts Office',
-    isRead: false,
-  },
-];
+type ApprovedNotice = {
+  id: string;
+  title: string;
+  description: string;
+  category?: string;
+  createdAt?: any;
+  creatorRole?: string;
+};
 
 export default function StudentHome() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [notices, setNotices] = useState<ApprovedNotice[]>([]);
+
+  useEffect(() => {
+    const q = query(
+      collection(db, 'notices'),
+      where('status', '==', 'approved'),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: ApprovedNotice[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }) as ApprovedNotice);
+      setNotices(data);
+    });
+    return unsubscribe;
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1500);
   };
 
-  const categoryCounts = {
-    exam: 5,
-    events: 8,
-    fees: 2,
-    holidays: 3,
-    general: 12,
-  };
+  // Optionally, you can compute category counts from notices
+  const categoryCounts = notices.reduce(
+    (acc, n) => {
+      const cat = n.category || 'general';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    },
+    { exam: 0, events: 0, fees: 0, holidays: 0, general: 0 } as Record<string, number>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-      
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -76,7 +72,6 @@ export default function StudentHome() {
           <Ionicons name="person-circle" size={IconSize.xl} color={Colors.primary} />
         </TouchableOpacity>
       </View>
-
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
@@ -88,7 +83,6 @@ export default function StudentHome() {
           onChangeText={setSearchQuery}
           onFilter={() => {}}
         />
-
         {/* Categories */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -108,7 +102,6 @@ export default function StudentHome() {
             <CategoryCard category="holidays" count={categoryCounts.holidays} onPress={() => {}} />
           </View>
         </View>
-
         {/* Recent Notices */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -117,16 +110,23 @@ export default function StudentHome() {
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
-          {mockNotices.map((notice) => (
+          {notices.map((notice) => (
             <NoticeCard
               key={notice.id}
-              notice={notice}
+              notice={{
+                id: notice.id,
+                title: notice.title,
+                content: notice.description,
+                category: notice.category || 'general',
+                date: notice.createdAt?.toDate ? notice.createdAt.toDate().toLocaleDateString() : '',
+                time: notice.createdAt?.toDate ? notice.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                author: notice.creatorRole === 'admin' ? 'Admin' : 'Faculty',
+              }}
               onPress={() => router.push(`/notice-detail?id=${notice.id}`)}
             />
           ))}
         </View>
       </ScrollView>
-
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem}>
