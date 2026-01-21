@@ -1,14 +1,14 @@
 import { CategoryCard } from '@/components/notices/CategoryCard';
-import { Notice, NoticeCard } from '@/components/notices/NoticeCard';
+import { NoticeCard } from '@/components/notices/NoticeCard';
 import { SearchBar } from '@/components/notices/SearchBar';
 import { Colors } from '@/constants/colors';
+import { db } from '@/constants/firebase';
 import { FontSize, FontWeight, IconSize, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '@/constants/firebase';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

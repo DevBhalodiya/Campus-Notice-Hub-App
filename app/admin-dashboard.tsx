@@ -1,14 +1,13 @@
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
-import { Notice, NoticeCard } from '@/components/notices/NoticeCard';
 import { Colors } from '@/constants/colors';
+import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { collection, query, where, onSnapshot, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/constants/firebase';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

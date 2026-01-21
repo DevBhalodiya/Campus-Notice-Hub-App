@@ -1,13 +1,13 @@
 import { Button } from '@/components/common/Button';
 import { Colors } from '@/constants/colors';
+import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { auth, db } from '@/constants/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FacultyCreateNotice() {
