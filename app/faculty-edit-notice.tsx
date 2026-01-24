@@ -1,25 +1,96 @@
+
 import { Button } from '@/components/common/Button';
 import { Colors } from '@/constants/colors';
+import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function FacultyEditNotice() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  // Mocked notice data for editing
-  const [title, setTitle] = useState('Sample Notice Title');
-  const [content, setContent] = useState('Sample notice content.');
-  const [category, setCategory] = useState('general');
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleUpdate = () => {
-    Alert.alert('Notice Updated', 'Your changes have been sent to admin for approval.', [
-      { text: 'OK', onPress: () => router.push('/faculty-my-notices') },
-    ]);
+  useEffect(() => {
+    const fetchNotice = async () => {
+      if (!id || typeof id !== 'string') {
+        setError('Invalid notice ID.');
+        setLoading(false);
+        return;
+      }
+      if (!auth.currentUser) {
+        setError('You must be logged in.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const noticeRef = doc(db, 'notices', id);
+        const snap = await getDoc(noticeRef);
+        if (!snap.exists()) {
+          setError('Notice not found.');
+          setLoading(false);
+          return;
+        }
+        const data = snap.data();
+        if (data.createdBy !== auth.currentUser.uid) {
+          setError('You do not have permission to edit this notice.');
+          setLoading(false);
+          return;
+        }
+        if (data.status !== 'pending') {
+          setError('Only pending notices can be edited.');
+          setLoading(false);
+          return;
+        }
+        setTitle(data.title || '');
+        setContent(data.description || '');
+        setCategory(data.category || '');
+        setLoading(false);
+      } catch (e) {
+        setError('Failed to fetch notice.');
+        setLoading(false);
+      }
+    };
+    fetchNotice();
+  }, [id]);
+
+  const handleUpdate = async () => {
+    if (!auth.currentUser) {
+      Alert.alert('Error', 'You must be logged in.');
+      return;
+    }
+    if (!title.trim() || !content.trim() || !category.trim()) {
+      Alert.alert('Validation', 'All fields are required.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const noticeRef = doc(db, 'notices', id as string);
+      // Only update title, description, category, keep status as 'pending'
+      await updateDoc(noticeRef, {
+        title: title.trim(),
+        description: content.trim(),
+        category: category.trim(),
+        status: 'pending',
+      });
+      Alert.alert('Notice Updated', 'Your changes have been sent to admin for approval.', [
+        { text: 'OK', onPress: () => router.push('/faculty-my-notices') },
+      ]);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to update notice.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -29,37 +100,48 @@ export default function FacultyEditNotice() {
         <Ionicons name="arrow-back" size={28} color={Colors.primary} onPress={() => router.back()} />
         <Text style={styles.headerTitle}>Edit Notice</Text>
       </View>
-      <View style={styles.form}>
-        <Text style={styles.label}>Title</Text>
-        <TextInput
-          style={styles.input}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Enter notice title"
-        />
-        <Text style={styles.label}>Content</Text>
-        <TextInput
-          style={[styles.input, { height: 100 }]}
-          value={content}
-          onChangeText={setContent}
-          placeholder="Enter notice content"
-          multiline
-        />
-        <Text style={styles.label}>Category</Text>
-        <TextInput
-          style={styles.input}
-          value={category}
-          onChangeText={setCategory}
-          placeholder="e.g. events, exam, general"
-        />
-        <Button
-          title="Update Notice"
-          onPress={handleUpdate}
-          size="lg"
-          fullWidth
-          style={styles.submitButton}
-        />
-      </View>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : error ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ color: Colors.error, fontSize: 16, textAlign: 'center' }}>{error}</Text>
+        </View>
+      ) : (
+        <View style={styles.form}>
+          <Text style={styles.label}>Title</Text>
+          <TextInput
+            style={styles.input}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Enter notice title"
+          />
+          <Text style={styles.label}>Content</Text>
+          <TextInput
+            style={[styles.input, { height: 100 }]}
+            value={content}
+            onChangeText={setContent}
+            placeholder="Enter notice content"
+            multiline
+          />
+          <Text style={styles.label}>Category</Text>
+          <TextInput
+            style={styles.input}
+            value={category}
+            onChangeText={setCategory}
+            placeholder="e.g. events, exam, general"
+          />
+          <Button
+            title={submitting ? 'Updating...' : 'Update Notice'}
+            onPress={handleUpdate}
+            size="lg"
+            fullWidth
+            style={styles.submitButton}
+            disabled={submitting}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }

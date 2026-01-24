@@ -22,11 +22,13 @@ type PendingNotice = {
 export default function AdminDashboard() {
   const router = useRouter();
   const [pendingNotices, setPendingNotices] = useState<PendingNotice[]>([]);
+  const [approvedNotices, setApprovedNotices] = useState<PendingNotice[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'notices'), where('status', '==', 'pending'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    // Listen for pending notices
+    const qPending = query(collection(db, 'notices'), where('status', '==', 'pending'));
+    const unsubscribePending = onSnapshot(qPending, (snapshot) => {
       const notices: PendingNotice[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -34,7 +36,19 @@ export default function AdminDashboard() {
       setPendingNotices(notices);
       setLoading(false);
     });
-    return unsubscribe;
+    // Listen for approved notices
+    const qApproved = query(collection(db, 'notices'), where('status', '==', 'approved'));
+    const unsubscribeApproved = onSnapshot(qApproved, (snapshot) => {
+      const notices: PendingNotice[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }) as PendingNotice);
+      setApprovedNotices(notices);
+    });
+    return () => {
+      unsubscribePending();
+      unsubscribeApproved();
+    };
   }, []);
 
   const handleApprove = async (noticeId: string) => {
@@ -61,7 +75,29 @@ export default function AdminDashboard() {
     }
   };
 
-  // ...existing code for stats, quickActions, handleLogout
+  const confirmDeleteNotice = (noticeId: string) => {
+    Alert.alert(
+      'Delete Notice',
+      'Are you sure you want to delete this notice? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => handleDeleteNotice(noticeId),
+        },
+      ]
+    );
+  };
+
+  const handleDeleteNotice = async (noticeId: string) => {
+    try {
+      await deleteDoc(doc(db, 'notices', noticeId));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete notice.');
+    }
+  };
+
   const stats = [
     { id: '1', label: 'Total Notices', value: '48', icon: 'document-text', color: Colors.primary },
     { id: '2', label: 'Active Students', value: '1,234', icon: 'people', color: Colors.success },
@@ -160,6 +196,37 @@ export default function AdminDashboard() {
                     style={{ flex: 1, backgroundColor: Colors.error }}
                     onPress={() => handleReject(notice.id)}
                   />
+                  <Button
+                    title="Delete"
+                    size="sm"
+                    style={{ flex: 1, backgroundColor: Colors.error, borderWidth: 1, borderColor: Colors.error }}
+                    onPress={() => confirmDeleteNotice(notice.id)}
+                  />
+                </View>
+              </Card>
+            ))
+          )}
+        </View>
+
+        {/* Approved Notices (Admin can delete) */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Approved Notices</Text>
+          </View>
+          {approvedNotices.length === 0 ? (
+            <Text>No approved notices.</Text>
+          ) : (
+            approvedNotices.map((notice) => (
+              <Card key={notice.id} style={{ marginBottom: 16 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{notice.title}</Text>
+                <Text style={{ marginVertical: 8 }}>{notice.description}</Text>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <Button
+                    title="Delete"
+                    size="sm"
+                    style={{ flex: 1, backgroundColor: Colors.error, borderWidth: 1, borderColor: Colors.error }}
+                    onPress={() => confirmDeleteNotice(notice.id)}
+                  />
                 </View>
               </Card>
             ))
@@ -185,7 +252,6 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.xxl,
