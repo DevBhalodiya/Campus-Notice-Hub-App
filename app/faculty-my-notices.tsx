@@ -31,11 +31,18 @@ export default function FacultyMyNotices() {
       where('createdBy', '==', auth.currentUser.uid),
       orderBy('createdAt', 'desc')
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: MyNotice[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }) as MyNotice);
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data: MyNotice[] = snapshot.docs.map((doc) => {
+          const d = doc.data();
+          return {
+            id: doc.id,
+            title: d.title || '',
+            description: d.description || '',
+            category: d.category || '',
+            status: d.status || '',
+            createdAt: d.createdAt,
+          };
+        });
       setNotices(data);
       setLoading(false);
     });
@@ -93,7 +100,7 @@ export default function FacultyMyNotices() {
                   onPress={
                     notice.status === 'pending'
                       ? () => router.push(`/faculty-edit-notice?id=${notice.id}`)
-                      : undefined
+                      : () => {}
                   }
                 />
                 {/* Edit button only for pending */}
@@ -120,10 +127,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.lg,
     backgroundColor: Colors.surface,
+  },
+  backButton: {
+    marginRight: Spacing.lg,
+    padding: Spacing.sm,
   },
   headerTitle: {
     fontSize: FontSize.xl,

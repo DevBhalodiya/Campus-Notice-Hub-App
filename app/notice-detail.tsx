@@ -1,11 +1,14 @@
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { Colors } from '@/constants/colors';
+import { db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
-import { ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { doc, getDoc } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { useUserNameByUid } from '@/utils/useUserNameByUid';
+import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -13,41 +16,66 @@ export default function NoticeDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [notice, setNotice] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  // Fetch real author name if createdBy exists
+  const { name: authorName, loading: authorLoading } = useUserNameByUid(notice?.createdBy);
 
-  // Mock notice data - In real app, fetch based on params.id
-  const notice = {
-    id: params.id as string,
-    title: 'Mid-Semester Examination Schedule Released',
-    content: `The schedule for mid-semester examinations has been released. Students are advised to check their registered courses and exam timings on the student portal.
-
-Important Points:
-• All exams will be conducted in offline mode
-• Students must carry their ID cards
-• Reporting time is 30 minutes before exam
-• No electronic devices allowed in exam hall
-• Results will be declared within 15 days
-
-For any queries, please contact the examination cell.
-
-Best regards,
-Examination Department`,
-    category: 'exam' as const,
-    date: '10 Jan 2026',
-    time: '09:30 AM',
-    author: 'Dr. Admin',
-    authorRole: 'Examination Head',
-    views: 234,
-  };
+  useEffect(() => {
+    const fetchNotice = async () => {
+      if (!params.id) {
+        setError('Notice not found.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const docRef = doc(db, 'notices', params.id as string);
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) {
+          setError('Notice not found.');
+        } else {
+          setNotice({ id: snap.id, ...snap.data() });
+        }
+      } catch (e) {
+        setError('Failed to load notice.');
+      }
+      setLoading(false);
+    };
+    fetchNotice();
+  }, [params.id]);
 
   const handleShare = async () => {
+    if (!notice) return;
     try {
       await Share.share({
-        message: `${notice.title}\n\n${notice.content}`,
+        message: `${notice.title}\n\n${notice.description || notice.content || ''}`,
       });
     } catch (error) {
       console.log(error);
     }
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+  if (error || !notice) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+          <Text style={{ color: Colors.error, fontSize: 16, textAlign: 'center' }}>{error || 'Notice not found.'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,7 +94,7 @@ Examination Department`,
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Category Badge */}
-        <CategoryBadge category={notice.category} />
+        <CategoryBadge category={notice.category || 'general'} />
 
         {/* Title */}
         <Text style={styles.title}>{notice.title}</Text>
@@ -75,16 +103,9 @@ Examination Department`,
         <View style={styles.metaContainer}>
           <View style={styles.metaItem}>
             <Ionicons name="calendar-outline" size={16} color={Colors.textTertiary} />
-            <Text style={styles.metaText}>{notice.date}</Text>
+            <Text style={styles.metaText}>{notice.createdAt ? (notice.createdAt.toDate ? notice.createdAt.toDate().toLocaleDateString() : String(notice.createdAt)) : ''}</Text>
           </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="time-outline" size={16} color={Colors.textTertiary} />
-            <Text style={styles.metaText}>{notice.time}</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="eye-outline" size={16} color={Colors.textTertiary} />
-            <Text style={styles.metaText}>{notice.views} views</Text>
-          </View>
+          {/* You can add more meta info here if available */}
         </View>
 
         {/* Author Info */}
@@ -93,14 +114,14 @@ Examination Department`,
             <Ionicons name="person" size={24} color={Colors.primary} />
           </View>
           <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{notice.author}</Text>
-            <Text style={styles.authorRole}>{notice.authorRole}</Text>
+            <Text style={styles.authorName}>{notice.author || notice.createdBy || 'Unknown'}</Text>
+            <Text style={styles.authorRole}>{notice.authorRole || notice.creatorRole || ''}</Text>
           </View>
         </View>
 
         {/* Content */}
         <View style={styles.contentCard}>
-          <Text style={styles.noticeContent}>{notice.content}</Text>
+          <Text style={styles.noticeContent}>{notice.description || notice.content || ''}</Text>
         </View>
 
         {/* Actions */}
@@ -119,7 +140,7 @@ Examination Department`,
             </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-            <Ionicons name="share-social-outline" size={20} color={Colors.textSecondary} />
+            <Ionicons name="share-outline" size={20} color={Colors.textSecondary} />
             <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
         </View>
@@ -179,8 +200,6 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: FontSize.sm,
-    color: Colors.textTertiary,
-    marginLeft: Spacing.xs,
   },
   authorCard: {
     flexDirection: 'row',

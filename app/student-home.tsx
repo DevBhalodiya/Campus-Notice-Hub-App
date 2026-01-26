@@ -4,6 +4,7 @@ import { SearchBar } from '@/components/notices/SearchBar';
 import { Colors } from '@/constants/colors';
 import { db } from '@/constants/firebase';
 import { FontSize, FontWeight, IconSize, Spacing } from '@/constants/spacing';
+import { useUserProfile } from '@/utils/useUserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -27,6 +28,7 @@ export default function StudentHome() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [notices, setNotices] = useState<ApprovedNotice[]>([]);
+  const { profile, loading: profileLoading } = useUserProfile();
 
   useEffect(() => {
     const q = query(
@@ -65,7 +67,13 @@ export default function StudentHome() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Hello, Student! 👋</Text>
+          <Text style={styles.greeting}>
+            {profileLoading
+              ? 'Loading...'
+              : profile
+                ? `Hello, ${profile.name} (${profile.role})! 👋`
+                : 'Hello! 👋'}
+          </Text>
           <Text style={styles.subtitle}>Stay updated with campus notices</Text>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={() => router.push('/student-profile')}>

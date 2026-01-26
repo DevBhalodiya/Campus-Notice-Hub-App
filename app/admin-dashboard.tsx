@@ -3,6 +3,7 @@ import { Card } from '@/components/common/Card';
 import { Colors } from '@/constants/colors';
 import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { useUserProfile } from '@/utils/useUserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
   const [pendingNotices, setPendingNotices] = useState<PendingNotice[]>([]);
   const [approvedNotices, setApprovedNotices] = useState<PendingNotice[]>([]);
   const [loading, setLoading] = useState(true);
+  const { profile, loading: profileLoading } = useUserProfile();
 
   useEffect(() => {
     // Listen for pending notices
@@ -130,8 +132,17 @@ export default function AdminDashboard() {
       <StatusBar style="light" />
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Welcome, Admin! 👋</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting}>
+            {profileLoading
+              ? 'Loading...'
+              : profile
+                ? `Welcome, ${profile.name} (${profile.role})! 👋`
+                : 'Welcome! 👋'}
+          </Text>
           <Text style={styles.subtitle}>Manage campus notices</Text>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
@@ -256,6 +267,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.xxl,
     backgroundColor: Colors.primary,
+  },
+  backButton: {
+    marginRight: Spacing.lg,
+    padding: Spacing.sm,
   },
   greeting: {
     fontSize: FontSize.xxl,

@@ -3,6 +3,7 @@ import { Card } from '@/components/common/Card';
 import { Notice, NoticeCard } from '@/components/notices/NoticeCard';
 import { Colors } from '@/constants/colors';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { useUserProfile } from '@/utils/useUserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -33,6 +34,7 @@ const mockNotices: Notice[] = [
 
 export default function FacultyDashboard() {
   const router = useRouter();
+  const { profile, loading: profileLoading } = useUserProfile();
 
   const stats = [
     { id: '1', label: 'Notices Pending Approval', value: '3', icon: 'document-text', color: Colors.primary },
@@ -67,8 +69,17 @@ export default function FacultyDashboard() {
       <StatusBar style="light" />
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Welcome, Faculty! 👋</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.white} />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.greeting}>
+            {profileLoading
+              ? 'Loading...'
+              : profile
+                ? `Welcome, ${profile.name} (${profile.role})! 👋`
+                : 'Welcome! 👋'}
+          </Text>
           <Text style={styles.subtitle}>Submit notices for admin approval</Text>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
@@ -142,11 +153,14 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.xxl,
     backgroundColor: Colors.primary,
+  },
+  backButton: {
+    marginRight: Spacing.lg,
+    padding: Spacing.sm,
   },
   greeting: {
     fontSize: FontSize.xxl,

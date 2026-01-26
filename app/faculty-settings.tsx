@@ -1,12 +1,20 @@
 import { Colors } from '@/constants/colors';
-import { Spacing, FontSize, FontWeight } from '@/constants/spacing';
+import { FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function FacultySettings() {
+  const router = require('expo-router').useRouter();
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Faculty Settings</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.primary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Faculty Settings</Text>
+        <View style={{ width: 32 }} />
+      </View>
       <Text style={styles.text}>Settings page for faculty (profile, preferences, etc.).</Text>
     </View>
   );
@@ -17,14 +25,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
     padding: Spacing.xl,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  title: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: Spacing.xxl,
+    paddingBottom: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  backButton: {
+    marginRight: Spacing.lg,
+    padding: Spacing.sm,
+  },
+  headerTitle: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     color: Colors.primary,
-    marginBottom: Spacing.lg,
+    flex: 1,
+    textAlign: 'center',
   },
   text: {
     fontSize: FontSize.md,

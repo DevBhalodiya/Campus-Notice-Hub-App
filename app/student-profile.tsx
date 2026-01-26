@@ -1,6 +1,7 @@
 import { Card } from '@/components/common/Card';
 import { Colors } from '@/constants/colors';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { useUserProfile } from '@/utils/useUserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -11,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function StudentProfile() {
   const router = useRouter();
+  const { profile, loading: profileLoading } = useUserProfile();
 
   const handleLogout = () => {
     Alert.alert(
@@ -60,10 +62,16 @@ export default function StudentProfile() {
               <Ionicons name="camera" size={16} color={Colors.white} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.name}>John Doe</Text>
-          <Text style={styles.email}>john.doe@college.edu</Text>
+          <Text style={styles.name}>
+            {profileLoading ? 'Loading...' : profile ? profile.name : 'Name'}
+          </Text>
+          <Text style={styles.email}>
+            {profileLoading ? '' : profile ? profile.email : 'Email'}
+          </Text>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Student</Text>
+            <Text style={styles.badgeText}>
+              {profileLoading ? '' : profile ? profile.role : 'Role'}
+            </Text>
           </View>
         </View>
 
