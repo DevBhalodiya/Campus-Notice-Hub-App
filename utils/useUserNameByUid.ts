@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
 import { db } from '@/constants/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 
 export function useUserNameByUid(uid?: string) {
   const [name, setName] = useState<string | null>(null);

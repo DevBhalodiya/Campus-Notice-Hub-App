@@ -2,12 +2,12 @@ import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { Colors } from '@/constants/colors';
 import { db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { useUserNameByUid } from '@/utils/useUserNameByUid';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { useUserNameByUid } from '@/utils/useUserNameByUid';
 import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 

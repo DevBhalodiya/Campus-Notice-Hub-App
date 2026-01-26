@@ -1,8 +1,8 @@
 import { Colors } from '@/constants/colors';
 import { FontSize, FontWeight, Spacing } from '@/constants/spacing';
-import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function FacultySettings() {
   const router = require('expo-router').useRouter();
