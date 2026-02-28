@@ -100,12 +100,76 @@ export default function AdminDashboard() {
     }
   };
 
-  const stats = [
-    { id: '1', label: 'Total Notices', value: '48', icon: 'document-text', color: Colors.primary },
-    { id: '2', label: 'Active Students', value: '1,234', icon: 'people', color: Colors.success },
-    { id: '3', label: "Today's Posts", value: '5', icon: 'calendar', color: Colors.warning },
-    { id: '4', label: 'Total Views', value: '12.5K', icon: 'eye', color: Colors.info },
-  ];
+  // Real-time stats state
+  const [stats, setStats] = useState([
+    { id: '1', label: 'Total Notices', value: '', icon: 'document-text', color: Colors.primary },
+    { id: '2', label: 'Active Students', value: '', icon: 'people', color: Colors.success },
+    { id: '3', label: "Today's Posts", value: '', icon: 'calendar', color: Colors.warning },
+    { id: '4', label: 'Total Views', value: '', icon: 'eye', color: Colors.info },
+  ]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setStatsLoading(true);
+    setStatsError(null);
+    // Total Notices
+    const unsubNotices = onSnapshot(collection(db, 'notices'), (snapshot) => {
+      const totalNotices = snapshot.size;
+      // Today's Posts
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const todaysPosts = snapshot.docs.filter(doc => {
+        const createdAt = doc.data().createdAt?.toDate?.() || doc.data().createdAt;
+        if (!createdAt) return false;
+        const createdDate = new Date(createdAt);
+        return createdDate >= today;
+      }).length;
+      // Total Views
+      const totalViews = snapshot.docs.reduce((sum, doc) => sum + (doc.data().views || 0), 0);
+      setStats(prev => prev.map(stat => {
+        if (stat.id === '1') return { ...stat, value: totalNotices.toString() };
+        if (stat.id === '3') return { ...stat, value: todaysPosts.toString() };
+        if (stat.id === '4') return { ...stat, value: totalViews >= 1000 ? (totalViews/1000).toFixed(1) + 'K' : totalViews.toString() };
+        return stat;
+      }));
+      setStatsLoading(false);
+    }, (err) => {
+      setStatsError('Failed to fetch notices');
+      setStatsLoading(false);
+    });
+    // Active Students
+    // Always attempt fallback query for students
+    let unsubStudents: (() => void) | null = null;
+    unsubStudents = onSnapshot(
+      query(collection(db, 'users'), where('role', '==', 'student'), where('status', '==', 'active')),
+      (snapshot) => {
+        const activeStudents = snapshot.size;
+        setStats(prev => prev.map(stat => stat.id === '2' ? { ...stat, value: activeStudents.toString() } : stat));
+        setStatsError(null);
+      },
+      (err) => {
+        console.error('Error fetching active students:', err);
+        // Fallback: fetch all students if status field is missing or query fails
+        onSnapshot(
+          query(collection(db, 'users'), where('role', '==', 'student')),
+          (snapshot) => {
+            const allStudents = snapshot.size;
+            setStats(prev => prev.map(stat => stat.id === '2' ? { ...stat, value: allStudents.toString() } : stat));
+            setStatsError(null);
+          },
+          (err2) => {
+            console.error('Error fetching all students:', err2);
+            setStatsError('Failed to fetch students. Please check Firestore rules, collection name, and fields.');
+          }
+        );
+      }
+    );
+    return () => {
+      unsubNotices();
+      unsubStudents();
+    };
+  }, []);
   const quickActions = [
     { id: '1', icon: 'add-circle', title: 'New Notice', color: Colors.primary, route: '/admin-create-notice' },
     { id: '2', icon: 'list', title: 'All Notices', color: Colors.secondary, route: '/admin-all-notices' },
@@ -152,15 +216,21 @@ export default function AdminDashboard() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Stats Grid */}
         <View style={styles.statsGrid}>
-          {stats.map((stat) => (
-            <Card key={stat.id} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}> 
-                <Ionicons name={stat.icon as any} size={24} color={stat.color} />
-              </View>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </Card>
-          ))}
+          {statsLoading ? (
+            <Text>Loading stats...</Text>
+          ) : statsError ? (
+            <Text style={{ color: Colors.error }}>{statsError}</Text>
+          ) : (
+            stats.map((stat) => (
+              <Card key={stat.id} style={styles.statCard}>
+                <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}> 
+                  <Ionicons name={stat.icon as any} size={24} color={stat.color} />
+                </View>
+                <Text style={styles.statValue}>{stat.value}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </Card>
+            ))
+          )}
         </View>
         {/* Quick Actions */}
         <View style={styles.section}>
