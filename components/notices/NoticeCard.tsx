@@ -4,7 +4,7 @@ import { Colors } from '@/constants/colors';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Image, StyleSheet, Text, View, Modal, Pressable } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export interface Notice {
   id: string;

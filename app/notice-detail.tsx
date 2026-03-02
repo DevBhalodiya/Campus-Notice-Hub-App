@@ -8,9 +8,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Modal, Pressable } from 'react-native';
 
 export default function NoticeDetailScreen() {
   const router = useRouter();
