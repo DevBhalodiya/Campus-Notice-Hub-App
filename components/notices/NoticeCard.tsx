@@ -3,8 +3,8 @@ import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { Colors } from '@/constants/colors';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Image, StyleSheet, Text, View, Modal, Pressable } from 'react-native';
 
 export interface Notice {
   id: string;
@@ -16,6 +16,7 @@ export interface Notice {
   isRead?: boolean;
   author: string;
   status?: 'Pending' | 'Approved' | 'Rejected'; // for faculty approval flow
+  imageUrl?: string; // image URL for the notice
 }
 
 interface NoticeCardProps {
@@ -24,21 +25,40 @@ interface NoticeCardProps {
 }
 
 export const NoticeCard: React.FC<NoticeCardProps> = ({ notice, onPress }) => {
+  const [modalVisible, setModalVisible] = useState(false);
   return (
     <Card onPress={onPress} style={styles.card}>
       <View style={styles.header}>
-        <CategoryBadge category={notice.category} size="sm" />
+        <CategoryBadge category={notice.category as any} size="sm" />
         {!notice.isRead && <View style={styles.unreadDot} />}
       </View>
-
       <Text style={styles.title} numberOfLines={2}>
         {notice.title}
       </Text>
-
       <Text style={styles.content} numberOfLines={2}>
         {notice.content}
       </Text>
-
+      {/* Image Preview after description with popup */}
+      {notice.imageUrl ? (
+        <>
+          <Pressable onPress={() => setModalVisible(true)}>
+            <Image
+              source={{ uri: notice.imageUrl }}
+              style={{ width: '100%', height: undefined, aspectRatio: 1.8, borderRadius: 8, marginBottom: 12 }}
+              resizeMode="contain"
+            />
+          </Pressable>
+          <Modal visible={modalVisible} transparent animationType="fade">
+            <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setModalVisible(false)}>
+              <Image
+                source={{ uri: notice.imageUrl }}
+                style={{ width: '90%', height: '70%', borderRadius: 12 }}
+                resizeMode="contain"
+              />
+            </Pressable>
+          </Modal>
+        </>
+      ) : null}
       <View style={styles.footer}>
         <View style={styles.authorInfo}>
           <Ionicons name="person-circle-outline" size={16} color={Colors.textTertiary} />

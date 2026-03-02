@@ -8,9 +8,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { doc, getDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { Modal, Pressable } from 'react-native';
 
 export default function NoticeDetailScreen() {
   const router = useRouter();
@@ -19,6 +19,7 @@ export default function NoticeDetailScreen() {
   const [notice, setNotice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [modalVisible, setModalVisible] = useState(false);
   // Fetch real author name if createdBy exists
   const { name: authorName, loading: authorLoading } = useUserNameByUid(notice?.createdBy);
 
@@ -95,6 +96,28 @@ export default function NoticeDetailScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Category Badge */}
         <CategoryBadge category={notice.category || 'general'} />
+
+        {/* Image Preview with popup */}
+        {notice.imageUrl ? (
+          <>
+            <Pressable onPress={() => setModalVisible(true)}>
+              <Image
+                source={{ uri: notice.imageUrl }}
+                style={{ width: '100%', height: undefined, aspectRatio: 1.8, borderRadius: 8, marginBottom: 16 }}
+                resizeMode="contain"
+              />
+            </Pressable>
+            <Modal visible={modalVisible} transparent animationType="fade">
+              <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' }} onPress={() => setModalVisible(false)}>
+                <Image
+                  source={{ uri: notice.imageUrl }}
+                  style={{ width: '90%', height: '70%', borderRadius: 12 }}
+                  resizeMode="contain"
+                />
+              </Pressable>
+            </Modal>
+          </>
+        ) : null}
 
         {/* Title */}
         <Text style={styles.title}>{notice.title}</Text>
