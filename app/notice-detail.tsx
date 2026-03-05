@@ -2,7 +2,7 @@ import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { Colors } from '@/constants/colors';
 import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
-import { useUserNameByUid } from '@/utils/useUserNameByUid';
+// import { useUserNameByUid } from '@/utils/useUserNameByUid';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -29,8 +29,18 @@ export default function NoticeDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  // Fetch real author name if createdBy exists
-  const { name: authorName, loading: authorLoading } = useUserNameByUid(notice?.createdBy);
+  // Fetch real author name after notice is loaded
+  const [authorName, setAuthorName] = useState<string | null>(null);
+  useEffect(() => {
+    if (notice?.createdBy) {
+      (async () => {
+        const userDoc = await getDoc(doc(db, 'users', notice.createdBy));
+        setAuthorName(userDoc.exists() ? userDoc.data().name || null : null);
+      })();
+    } else {
+      setAuthorName(null);
+    }
+  }, [notice?.createdBy]);
 
   useEffect(() => {
     const fetchNotice = async () => {
@@ -146,7 +156,7 @@ export default function NoticeDetailScreen() {
             <Ionicons name="person" size={24} color={Colors.primary} />
           </View>
           <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{notice.author || notice.createdBy || 'Unknown'}</Text>
+            <Text style={styles.authorName}>{authorName || notice.author || notice.createdBy || 'Unknown'}</Text>
             <Text style={styles.authorRole}>{notice.authorRole || notice.creatorRole || ''}</Text>
           </View>
         </View>
