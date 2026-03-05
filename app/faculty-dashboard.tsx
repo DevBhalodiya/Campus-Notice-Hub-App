@@ -1,47 +1,51 @@
 import { Button } from '@/components/common/Button';
-import { Card } from '@/components/common/Card';
 import { Notice, NoticeCard } from '@/components/notices/NoticeCard';
 import { Colors } from '@/constants/colors';
+import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { useUserProfile } from '@/utils/useUserProfile';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const mockNotices: Notice[] = [
-  {
-    id: '1',
-    title: 'Faculty Seminar Proposal',
-    content: 'A new seminar proposal has been submitted for review.',
-    category: 'seminar',
-    date: '11 Jan',
-    time: '10:00 AM',
-    author: 'Prof. Faculty',
-  },
-  {
-    id: '2',
-    title: 'Research Paper Submission',
-    content: 'Research paper submitted for admin approval.',
-    category: 'research',
-    date: '10 Jan',
-    time: '03:00 PM',
-    author: 'Prof. Faculty',
-  },
-];
+
 
 export default function FacultyDashboard() {
   const router = useRouter();
   const { profile, loading: profileLoading } = useUserProfile();
+  const [recentNotices, setRecentNotices] = useState<Notice[]>([]);
 
-  const stats = [
-    { id: '1', label: 'Notices Pending Approval', value: '3', icon: 'document-text', color: Colors.primary },
-    { id: '2', label: 'Approved Notices', value: '12', icon: 'checkmark-done', color: Colors.success },
-    { id: '3', label: 'Rejected Notices', value: '2', icon: 'close-circle', color: Colors.warning },
-    { id: '4', label: 'Total Submissions', value: '17', icon: 'send', color: Colors.info },
-  ];
+  useEffect(() => {
+    if (!profileLoading && profile && auth.currentUser) {
+      // Wait for profile to load
+      const q = query(
+        collection(db, 'notices'),
+        where('createdBy', '==', auth.currentUser.uid),
+        orderBy('createdAt', 'desc'),
+        limit(3)
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const data: Notice[] = snapshot.docs.map((doc) => {
+          const d = doc.data();
+          return {
+            id: doc.id,
+            title: d.title,
+            content: d.description || d.content || '',
+            category: d.category,
+            date: d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '',
+            time: d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            author: profile.name,
+          };
+        });
+        setRecentNotices(data);
+      });
+      return () => unsubscribe();
+    }
+  }, [profile, profileLoading]);
 
   const quickActions = [
     { id: '1', icon: 'add-circle', title: 'Submit Notice', color: Colors.primary, route: '/faculty-create-notice' },
@@ -88,17 +92,7 @@ export default function FacultyDashboard() {
       </View>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          {stats.map((stat) => (
-            <Card key={stat.id} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: stat.color + '20' }]}> 
-                <Ionicons name={stat.icon as any} size={24} color={stat.color} />
-              </View>
-              <Text style={styles.statValue}>{stat.value}</Text>
-              <Text style={styles.statLabel}>{stat.label}</Text>
-            </Card>
-          ))}
-        </View>
+
         {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
@@ -125,13 +119,17 @@ export default function FacultyDashboard() {
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
-          {mockNotices.map((notice) => (
-            <NoticeCard
-              key={notice.id}
-              notice={notice}
-              onPress={() => router.push(`/faculty-edit-notice?id=${notice.id}`)}
-            />
-          ))}
+          {recentNotices.length === 0 ? (
+            <Text style={{ color: Colors.textTertiary, textAlign: 'center', marginVertical: 16 }}>No recent submissions.</Text>
+          ) : (
+            recentNotices.map((notice) => (
+              <NoticeCard
+                key={notice.id}
+                notice={notice}
+                onPress={() => router.push(`/faculty-edit-notice?id=${notice.id}`)}
+              />
+            ))
+          )}
         </View>
         {/* Submit Notice Button */}
         <Button
