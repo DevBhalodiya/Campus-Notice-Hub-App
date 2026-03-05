@@ -1,5 +1,6 @@
 import { Button } from '@/components/common/Button';
-import { Colors } from '@/constants/colors';
+import { Input } from '@/components/common/Input';
+import { CategoryColors, Colors } from '@/constants/colors';
 import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,17 +9,20 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import React, { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { uploadImageToCloudinary } from '../utils/cloudinaryUpload';
+
+type Category = 'exam' | 'events' | 'fees' | 'holidays' | 'general';
 
 export default function FacultyCreateNotice() {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<Category>('general');
   const [loading, setLoading] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const categories: Category[] = ['exam', 'events', 'fees', 'holidays', 'general'];
 
   const askPermission = async (type: 'camera' | 'gallery') => {
     let result;
@@ -66,13 +70,9 @@ export default function FacultyCreateNotice() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!auth.currentUser) {
-      Alert.alert('Error', 'You must be logged in to create a notice.');
-      return;
-    }
-    if (!title.trim() || !content.trim() || !category.trim()) {
-      Alert.alert('Validation', 'All fields are required.');
+  const handlePublish = async () => {
+    if (!title || !content) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
     setLoading(true);
@@ -84,8 +84,8 @@ export default function FacultyCreateNotice() {
       await addDoc(collection(db, 'notices'), {
         title: title.trim(),
         description: content.trim(),
-        category: category.trim(),
-        createdBy: auth.currentUser.uid,
+        category: selectedCategory,
+        createdBy: auth.currentUser?.uid,
         creatorRole: 'faculty',
         status: 'pending',
         approvedBy: null,
@@ -95,13 +95,15 @@ export default function FacultyCreateNotice() {
       });
       setTitle('');
       setContent('');
-      setCategory('');
       setImageUri(null);
-      Alert.alert('Notice sent for admin approval', '', [
-        { text: 'OK', onPress: () => router.push('/faculty-dashboard') },
+      Alert.alert('Success', 'Notice sent for admin approval!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
       ]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit notice. Please try again.');
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to submit notice.');
     } finally {
       setLoading(false);
     }
@@ -115,53 +117,131 @@ export default function FacultyCreateNotice() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={80}
       >
-        <ScrollView style={styles.form} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-          <View style={styles.header}>
-            <Ionicons name="arrow-back" size={28} color={Colors.primary} onPress={() => router.back()} />
-            <Text style={styles.headerTitle}>Submit Notice</Text>
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 32 }}
+        >
+          {/* Category Selection */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Category *</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesScroll}
+            >
+              {categories.map((category) => {
+                const colors = CategoryColors[category];
+                const isSelected = selectedCategory === category;
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[
+                      styles.categoryChip,
+                      {
+                        backgroundColor: isSelected ? colors.text : colors.bg,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={() => setSelectedCategory(category)}
+                  >
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        { color: isSelected ? Colors.white : colors.text },
+                      ]}
+                    >
+                      {category.charAt(0).toUpperCase() + category.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
-          <View style={styles.form}>
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-              placeholder="Enter notice title"
-            />
-            <Text style={styles.label}>Content</Text>
-            <TextInput
-              style={[styles.input, { height: 100 }]}
-              value={content}
-              onChangeText={setContent}
-              placeholder="Enter notice content"
-              multiline
-            />
-            <Text style={styles.label}>Category</Text>
-            <TextInput
-              style={styles.input}
-              value={category}
-              onChangeText={setCategory}
-              placeholder="e.g. events, exam, general"
-            />
-            <View style={{ marginVertical: 16 }}>
-              {imageUri && (
-                <View>
-                  <Text style={styles.label}>Image Preview</Text>
-                  <Image source={{ uri: imageUri }} style={{ width: '100%', height: 180, borderRadius: 8, marginBottom: 14 }} />
-                </View>
-              )}
+
+          {/* Title Input */}
+          <Input
+            label="Notice Title *"
+            placeholder="Enter notice title"
+            value={title}
+            onChangeText={setTitle}
+            icon="document-text-outline"
+          />
+
+          {/* Content Input */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Content *</Text>
+            <View style={styles.textAreaContainer}>
+              <Ionicons name="create-outline" size={20} color={Colors.textTertiary} style={styles.textAreaIcon} />
+              <TextInput
+                style={styles.textArea}
+                placeholder="Write your notice content here..."
+                placeholderTextColor={Colors.textTertiary}
+                value={content}
+                onChangeText={setContent}
+                multiline
+                numberOfLines={10}
+                textAlignVertical="top"
+              />
             </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-              <Button title="Pick Image" onPress={pickImage} style={{ flex: 1, marginRight: 8 }} />
-              <Button title="Take Photo" onPress={takePhoto} style={{ flex: 1, marginLeft: 8 }} />
+          </View>
+
+          {/* Image Preview */}
+          {imageUri && (
+            <View style={styles.section}>
+              <Text style={styles.label}>Image Preview</Text>
+              <Image
+                source={{ uri: imageUri }}
+                style={{ width: '100%', height: 180, borderRadius: 8, marginBottom: 14 }}
+              />
             </View>
+          )}
+
+          {/* Image Picker Buttons */}
+          <View style={styles.actions}>
+            <Button title="Pick Image" onPress={pickImage} variant="outline" size="lg" style={styles.draftButton} />
+            <Button title="Take Photo" onPress={takePhoto} variant="outline" size="lg" style={styles.draftButton} />
+          </View>
+
+          {/* Preview Card */}
+          <View style={styles.section}>
+            <Text style={styles.label}>Preview</Text>
+            <View style={styles.previewCard}>
+              <View
+                style={[
+                  styles.previewBadge,
+                  { backgroundColor: CategoryColors[selectedCategory].bg, borderColor: CategoryColors[selectedCategory].border },
+                ]}
+              >
+                <Text
+                  style={[styles.previewBadgeText, { color: CategoryColors[selectedCategory].text }]}
+                >
+                  {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+                </Text>
+              </View>
+              <Text style={styles.previewTitle}>{title || 'Notice Title'}</Text>
+              <Text style={styles.previewContent}>{content || 'Notice content will appear here...'}</Text>
+              <View style={styles.previewFooter}>
+                <Text style={styles.previewDate}>Just now</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actions}>
             <Button
-              title={loading ? 'Submitting...' : 'Submit for Approval'}
-              onPress={handleSubmit}
+              title="Save as Draft"
+              onPress={() => {}}
+              variant="outline"
               size="lg"
-              fullWidth
-              style={styles.submitButton}
-              disabled={loading}
+              style={styles.draftButton}
+            />
+            <Button
+              title="Publish Notice"
+              onPress={handlePublish}
+              loading={loading}
+              size="lg"
+              style={styles.publishButton}
             />
           </View>
         </ScrollView>
@@ -175,42 +255,101 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.lg,
-    backgroundColor: Colors.surface,
-  },
-  headerTitle: {
-    fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold,
-    color: Colors.primary,
-    marginLeft: Spacing.md,
-  },
-  form: {
+  content: {
     flex: 1,
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.xl,
+  },
+  section: {
+    marginBottom: Spacing.xl,
   },
   label: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.medium,
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.gray300,
-    borderRadius: BorderRadius.md,
-    padding: Spacing.md,
-    fontSize: FontSize.md,
-    color: Colors.textPrimary,
-    backgroundColor: Colors.surface,
     marginBottom: Spacing.sm,
   },
-  submitButton: {
-    marginTop: Spacing.xl,
+  categoriesScroll: {
+    flexDirection: 'row',
+  },
+  categoryChip: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1.5,
+    marginRight: Spacing.sm,
+  },
+  categoryText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
+  textAreaContainer: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1.5,
+    borderColor: Colors.gray200,
+    padding: Spacing.md,
+    minHeight: 200,
+  },
+  textAreaIcon: {
+    marginBottom: Spacing.xs,
+  },
+  textArea: {
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  previewCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.gray200,
+  },
+  previewHeader: {
+    marginBottom: Spacing.sm,
+  },
+  previewBadge: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  previewBadgeText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+  },
+  previewTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  previewContent: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: Spacing.md,
+  },
+  previewFooter: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.gray200,
+    paddingTop: Spacing.sm,
+  },
+  previewDate: {
+    fontSize: FontSize.xs,
+    color: Colors.textTertiary,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.xxxl,
+  },
+  draftButton: {
+    flex: 1,
+  },
+  publishButton: {
+    flex: 1,
   },
 });

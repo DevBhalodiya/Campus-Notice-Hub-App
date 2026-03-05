@@ -3,6 +3,7 @@ import { NoticeCard } from '@/components/notices/NoticeCard';
 import { Colors } from '@/constants/colors';
 import { auth, db } from '@/constants/firebase';
 import { FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
@@ -73,6 +74,9 @@ export default function FacultyMyNotices() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={28} color="#6C63FF" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>My Notices</Text>
       </View>
       {loading ? (
@@ -142,6 +146,7 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     color: Colors.primary,
+    flex: 1,
   },
   content: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { auth, db } from '@/constants/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
 export interface UserProfile {
@@ -14,26 +14,24 @@ export function useUserProfile() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchProfile() {
-      if (!auth.currentUser) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-      try {
-        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
-        if (userDoc.exists()) {
-          setProfile(userDoc.data() as UserProfile);
-        } else {
-          setProfile(null);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch user profile');
-      } finally {
-        setLoading(false);
-      }
+    if (!auth.currentUser) {
+      setProfile(null);
+      setLoading(false);
+      return;
     }
-    fetchProfile();
+    const userRef = doc(db, 'users', auth.currentUser.uid);
+    const unsubscribe = onSnapshot(userRef, (userDoc) => {
+      if (userDoc.exists()) {
+        setProfile(userDoc.data() as UserProfile);
+      } else {
+        setProfile(null);
+      }
+      setLoading(false);
+    }, (err) => {
+      setError(err.message || 'Failed to fetch user profile');
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   return { profile, loading, error };
