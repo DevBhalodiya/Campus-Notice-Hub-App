@@ -32,9 +32,6 @@ export default function StudentProfile() {
     { id: '1', icon: 'person-outline', title: 'Edit Profile', route: '/edit-profile' },
     { id: '2', icon: 'notifications-outline', title: 'Notifications', route: '/notifications-settings' },
     { id: '3', icon: 'bookmark-outline', title: 'Saved Notices', route: '/student-bookmarks' },
-    { id: '4', icon: 'settings-outline', title: 'Settings', route: '/settings' },
-    { id: '5', icon: 'help-circle-outline', title: 'Help & Support', route: '/help' },
-    { id: '6', icon: 'information-circle-outline', title: 'About', route: '/about' },
   ];
 
   return (

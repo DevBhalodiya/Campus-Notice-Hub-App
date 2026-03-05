@@ -67,7 +67,11 @@ export default function StudentHome() {
       {/* Header */}
       <View style={styles.header}>
         <View>
-          <Text style={styles.greeting}>
+          <Text
+            style={styles.greeting}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
             {profileLoading
               ? 'Loading...'
               : profile
@@ -167,6 +171,9 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
+    flexShrink: 1,
+    flexWrap: 'wrap',
+    maxWidth: 260, // adjust as needed for your layout
   },
   subtitle: {
     fontSize: FontSize.sm,
