@@ -1,6 +1,6 @@
 import { CategoryCard } from '@/components/notices/CategoryCard';
 import { NoticeCard } from '@/components/notices/NoticeCard';
-import { SearchBar } from '@/components/notices/SearchBar';
+
 import { Colors } from '@/constants/colors';
 import { db } from '@/constants/firebase';
 import { FontSize, FontWeight, IconSize, Spacing } from '@/constants/spacing';
@@ -85,12 +85,7 @@ export default function StudentHome() {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
-        {/* Search Bar */}
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onFilter={() => {}}
-        />
+
         {/* Categories */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -141,10 +136,7 @@ export default function StudentHome() {
           <Ionicons name="home" size={24} color={Colors.primary} />
           <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-categories')}>
-          <Ionicons name="grid-outline" size={24} color={Colors.textTertiary} />
-          <Text style={styles.navText}>Categories</Text>
-        </TouchableOpacity>
+
         <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-bookmarks')}>
           <Ionicons name="bookmark-outline" size={24} color={Colors.textTertiary} />
           <Text style={styles.navText}>Saved</Text>

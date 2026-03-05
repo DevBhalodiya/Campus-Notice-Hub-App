@@ -1,4 +1,3 @@
-import { Card } from '@/components/common/Card';
 import { Colors } from '@/constants/colors';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { useUserProfile } from '@/utils/useUserProfile';
@@ -75,21 +74,7 @@ export default function StudentProfile() {
           </View>
         </View>
 
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <Card style={styles.statCard}>
-            <Text style={styles.statValue}>23</Text>
-            <Text style={styles.statLabel}>Notices Read</Text>
-          </Card>
-          <Card style={styles.statCard}>
-            <Text style={styles.statValue}>5</Text>
-            <Text style={styles.statLabel}>Saved</Text>
-          </Card>
-          <Card style={styles.statCard}>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Unread</Text>
-          </Card>
-        </View>
+
 
         {/* Options */}
         <View style={styles.optionsSection}>

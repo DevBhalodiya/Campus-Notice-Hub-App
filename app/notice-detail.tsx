@@ -1,12 +1,12 @@
 import { CategoryBadge } from '@/components/common/CategoryBadge';
 import { Colors } from '@/constants/colors';
-import { db } from '@/constants/firebase';
+import { auth, db } from '@/constants/firebase';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { useUserNameByUid } from '@/utils/useUserNameByUid';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { doc, getDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, getDoc as getFirestoreDoc, setDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,16 @@ export default function NoticeDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [isBookmarked, setIsBookmarked] = useState(false);
+    // Check if notice is saved
+    useEffect(() => {
+      const checkSaved = async () => {
+        if (!auth.currentUser || !params.id) return;
+        const savedRef = doc(db, 'users', auth.currentUser.uid, 'savedNotices', params.id as string);
+        const snap = await getFirestoreDoc(savedRef);
+        setIsBookmarked(snap.exists());
+      };
+      checkSaved();
+    }, [params.id]);
   const [notice, setNotice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -150,7 +160,17 @@ export default function NoticeDetailScreen() {
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.actionButton, isBookmarked && styles.actionButtonActive]}
-            onPress={() => setIsBookmarked(!isBookmarked)}
+            onPress={async () => {
+              if (!auth.currentUser || !notice?.id) return;
+              const savedRef = doc(db, 'users', auth.currentUser.uid, 'savedNotices', notice.id);
+              if (isBookmarked) {
+                await deleteDoc(savedRef);
+                setIsBookmarked(false);
+              } else {
+                await setDoc(savedRef, { savedAt: new Date() });
+                setIsBookmarked(true);
+              }
+            }}
           >
             <Ionicons
               name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
