@@ -8,9 +8,7 @@
     "scheme": "campusnoticehub",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "assetBundlePatterns": ["**/*"],
-
     "plugins": [
       [
         "expo-notifications",
@@ -22,14 +20,12 @@
         }
       ]
     ],
-
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"]
       }
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -40,10 +36,19 @@
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS"
       ]
+      // "package": "com.yashpatel25.CampusNoticeHub"
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
