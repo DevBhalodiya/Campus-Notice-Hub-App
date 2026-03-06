@@ -1,9 +1,16 @@
 import { getCurrentUserRole } from "@/components/auth/authHelpers";
-import { auth } from "@/constants/firebase";
+import { auth, db } from "@/constants/firebase";
 import { getSigningUp } from "@/utils/authStateManager";
+import {
+  addNotificationResponseListener,
+  configureAndroidChannel,
+  getExpoPushToken,
+  requestNotificationPermission,
+} from "@/utils/notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { onAuthStateChanged, reload, signOut } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 
 export default function RootLayout() {
@@ -12,17 +19,50 @@ export default function RootLayout() {
   const [checking, setChecking] = useState(true);
   const navigationRef = useRef(false);
 
+  // ── Notification bootstrap (runs once on mount) ──────────────────────────
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let responseSubscription: ReturnType<
+      typeof addNotificationResponseListener
+    >;
+
+    async function initNotifications(uid: string) {
+      await configureAndroidChannel();
+
+      const granted = await requestNotificationPermission();
+      if (!granted) return;
+
+      const token = await getExpoPushToken();
+      if (token) {
+        await setDoc(
+          doc(db, "users", uid),
+          { expoPushToken: token, tokenUpdatedAt: serverTimestamp() },
+          { merge: true },
+        );
+      }
+
+      // Navigate to relevant screen when user taps a notification
+      responseSubscription = addNotificationResponseListener((response) => {
+        const data = response.notification.request.content.data as Record<
+          string,
+          unknown
+        >;
+        if (data?.noticeId) {
+          router.push({
+            pathname: "/notice-detail",
+            params: { id: data.noticeId as string },
+          });
+        }
+      });
+    }
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       console.log("[LAYOUT] Auth state changed. User:", user?.email || "none");
 
-      // If user is being created during signup, ignore this auth state change
       if (getSigningUp()) {
         console.log("[LAYOUT] Signup in progress, ignoring auth state change");
         return;
       }
 
-      // If no user, redirect to login
       if (!user) {
         console.log("[LAYOUT] No user, redirecting to login");
         if (segments[0] !== "login" && segments[0] !== "signup") {
@@ -33,12 +73,9 @@ export default function RootLayout() {
       }
 
       try {
-        // Reload user to get latest email verification status
         await reload(user);
-
         console.log("[LAYOUT] Email verified:", user.emailVerified);
 
-        // If email is not verified, sign them out
         if (!user.emailVerified) {
           console.log("[LAYOUT] Email not verified, signing out");
           await signOut(auth);
@@ -49,7 +86,9 @@ export default function RootLayout() {
           return;
         }
 
-        // Get user role and navigate to appropriate dashboard
+        // Init notifications for authenticated user
+        await initNotifications(user.uid);
+
         const role = await getCurrentUserRole(user.uid);
         console.log("[LAYOUT] User role:", role);
 
@@ -57,7 +96,6 @@ export default function RootLayout() {
         if (role === "faculty") route = "/faculty-dashboard";
         else if (role === "admin") route = "/admin-dashboard";
 
-        // Only navigate if we're not already on a dashboard and haven't navigated yet
         const isOnDashboard =
           segments[0] === "student-home" ||
           segments[0] === "faculty-dashboard" ||
@@ -79,8 +117,9 @@ export default function RootLayout() {
     });
 
     return () => {
-      unsubscribe();
+      unsubscribeAuth();
       navigationRef.current = false;
+      responseSubscription?.remove();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -108,6 +147,7 @@ export default function RootLayout() {
         <Stack.Screen name="faculty-my-notices" />
         <Stack.Screen name="faculty-edit-notice" />
         <Stack.Screen name="faculty-settings" />
+        <Stack.Screen name="notifications-settings" />
       </Stack>
       <StatusBar style="auto" />
     </>

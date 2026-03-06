@@ -1,45 +1,70 @@
-import { Button } from '@/components/common/Button';
-import { Input } from '@/components/common/Input';
-import { CategoryColors, Colors } from '@/constants/colors';
-import { auth, db } from '@/constants/firebase';
-import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import React, { useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { uploadImageToCloudinary } from '../utils/cloudinaryUpload';
+import { Button } from "@/components/common/Button";
+import { Input } from "@/components/common/Input";
+import { CategoryColors, Colors } from "@/constants/colors";
+import { auth, db } from "@/constants/firebase";
+import {
+  BorderRadius,
+  FontSize,
+  FontWeight,
+  Spacing,
+} from "@/constants/spacing";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import React, { useState } from "react";
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { uploadImageToCloudinary } from "../utils/cloudinaryUpload";
 
-type Category = 'exam' | 'events' | 'fees' | 'holidays' | 'general';
+type Category = "exam" | "events" | "fees" | "holidays" | "general";
 
 export default function FacultyCreateNotice() {
   const router = useRouter();
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('general');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<Category>("general");
   const [loading, setLoading] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const categories: Category[] = ['exam', 'events', 'fees', 'holidays', 'general'];
+  const categories: Category[] = [
+    "exam",
+    "events",
+    "fees",
+    "holidays",
+    "general",
+  ];
 
-  const askPermission = async (type: 'camera' | 'gallery') => {
+  const askPermission = async (type: "camera" | "gallery") => {
     let result;
-    if (type === 'camera') {
+    if (type === "camera") {
       result = await ImagePicker.requestCameraPermissionsAsync();
     } else {
       result = await ImagePicker.requestMediaLibraryPermissionsAsync();
     }
     if (!result.granted) {
-      Alert.alert('Permission Denied', `Permission to access ${type} is required.`);
+      Alert.alert(
+        "Permission Denied",
+        `Permission to access ${type} is required.`,
+      );
       return false;
     }
     return true;
   };
 
   const pickImage = async () => {
-    const granted = await askPermission('gallery');
+    const granted = await askPermission("gallery");
     if (!granted) return;
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -50,12 +75,12 @@ export default function FacultyCreateNotice() {
         setImageUri(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to pick image.');
+      Alert.alert("Error", "Failed to pick image.");
     }
   };
 
   const takePhoto = async () => {
-    const granted = await askPermission('camera');
+    const granted = await askPermission("camera");
     if (!granted) return;
     try {
       const result = await ImagePicker.launchCameraAsync({
@@ -66,55 +91,93 @@ export default function FacultyCreateNotice() {
         setImageUri(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to take photo.');
+      Alert.alert("Error", "Failed to take photo.");
     }
   };
 
   const handlePublish = async () => {
     if (!title || !content) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
     setLoading(true);
-    let imageUrl = '';
+    let imageUrl = "";
     try {
       if (imageUri) {
         imageUrl = await uploadImageToCloudinary(imageUri);
       }
-      await addDoc(collection(db, 'notices'), {
+      await addDoc(collection(db, "notices"), {
         title: title.trim(),
         description: content.trim(),
         category: selectedCategory,
         createdBy: auth.currentUser?.uid,
-        creatorRole: 'faculty',
-        status: 'pending',
+        creatorRole: "faculty",
+        status: "pending",
         approvedBy: null,
         approvedAt: null,
         createdAt: serverTimestamp(),
-        imageUrl: imageUrl || '',
+        imageUrl: imageUrl || "",
       });
-      setTitle('');
-      setContent('');
+      setTitle("");
+      setContent("");
       setImageUri(null);
-      Alert.alert('Success', 'Notice sent for admin approval!', [
+      Alert.alert("Success", "Notice sent for admin approval!", [
         {
-          text: 'OK',
+          text: "OK",
           onPress: () => router.back(),
         },
       ]);
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to submit notice.');
+      Alert.alert("Error", error.message || "Failed to submit notice.");
     } finally {
       setLoading(false);
     }
   };
+
+  // Get all user tokens and send push to each
+  async function notifyAllUsers(noticeTitle: string, noticeId: string) {
+    const { getDocs, collection } = await import("firebase/firestore");
+    const snap = await getDocs(collection(db, "users"));
+
+    const tokens: string[] = [];
+    snap.forEach((d) => {
+      const data = d.data();
+      if (
+        data.expoPushToken &&
+        data.notificationPrefs?.enabled !== false &&
+        data.notificationPrefs?.newNotices !== false
+      ) {
+        tokens.push(data.expoPushToken);
+      }
+    });
+
+    if (tokens.length === 0) return;
+
+    // Send using Expo Push API (no backend server needed for small apps)
+    const messages = tokens.map((to) => ({
+      to,
+      title: "📢 New Campus Notice",
+      body: noticeTitle,
+      data: { noticeId },
+      sound: "default",
+    }));
+
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(messages),
+    });
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={80}
       >
         <ScrollView
@@ -172,7 +235,12 @@ export default function FacultyCreateNotice() {
           <View style={styles.section}>
             <Text style={styles.label}>Content *</Text>
             <View style={styles.textAreaContainer}>
-              <Ionicons name="create-outline" size={20} color={Colors.textTertiary} style={styles.textAreaIcon} />
+              <Ionicons
+                name="create-outline"
+                size={20}
+                color={Colors.textTertiary}
+                style={styles.textAreaIcon}
+              />
               <TextInput
                 style={styles.textArea}
                 placeholder="Write your notice content here..."
@@ -192,15 +260,32 @@ export default function FacultyCreateNotice() {
               <Text style={styles.label}>Image Preview</Text>
               <Image
                 source={{ uri: imageUri }}
-                style={{ width: '100%', height: 180, borderRadius: 8, marginBottom: 14 }}
+                style={{
+                  width: "100%",
+                  height: 180,
+                  borderRadius: 8,
+                  marginBottom: 14,
+                }}
               />
             </View>
           )}
 
           {/* Image Picker Buttons */}
           <View style={styles.actions}>
-            <Button title="Pick Image" onPress={pickImage} variant="outline" size="lg" style={styles.draftButton} />
-            <Button title="Take Photo" onPress={takePhoto} variant="outline" size="lg" style={styles.draftButton} />
+            <Button
+              title="Pick Image"
+              onPress={pickImage}
+              variant="outline"
+              size="lg"
+              style={styles.draftButton}
+            />
+            <Button
+              title="Take Photo"
+              onPress={takePhoto}
+              variant="outline"
+              size="lg"
+              style={styles.draftButton}
+            />
           </View>
 
           {/* Preview Card */}
@@ -210,17 +295,26 @@ export default function FacultyCreateNotice() {
               <View
                 style={[
                   styles.previewBadge,
-                  { backgroundColor: CategoryColors[selectedCategory].bg, borderColor: CategoryColors[selectedCategory].border },
+                  {
+                    backgroundColor: CategoryColors[selectedCategory].bg,
+                    borderColor: CategoryColors[selectedCategory].border,
+                  },
                 ]}
               >
                 <Text
-                  style={[styles.previewBadgeText, { color: CategoryColors[selectedCategory].text }]}
+                  style={[
+                    styles.previewBadgeText,
+                    { color: CategoryColors[selectedCategory].text },
+                  ]}
                 >
-                  {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}
+                  {selectedCategory.charAt(0).toUpperCase() +
+                    selectedCategory.slice(1)}
                 </Text>
               </View>
-              <Text style={styles.previewTitle}>{title || 'Notice Title'}</Text>
-              <Text style={styles.previewContent}>{content || 'Notice content will appear here...'}</Text>
+              <Text style={styles.previewTitle}>{title || "Notice Title"}</Text>
+              <Text style={styles.previewContent}>
+                {content || "Notice content will appear here..."}
+              </Text>
               <View style={styles.previewFooter}>
                 <Text style={styles.previewDate}>Just now</Text>
               </View>
@@ -270,7 +364,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   categoriesScroll: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   categoryChip: {
     paddingHorizontal: Spacing.lg,
@@ -314,7 +408,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
     borderWidth: 1,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   previewBadgeText: {
     fontSize: FontSize.xs,
@@ -342,7 +436,7 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   actions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: Spacing.md,
     marginBottom: Spacing.xxxl,
   },
