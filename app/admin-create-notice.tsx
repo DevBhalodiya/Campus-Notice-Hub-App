@@ -112,6 +112,17 @@ export default function CreateNoticeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
+
+      {/* Back to Dashboard Arrow */}
+      <View style={{ padding: 16, alignItems: 'flex-start' }}>
+        <TouchableOpacity
+          onPress={() => router.replace('/admin-dashboard')}
+          style={styles.backCircle}
+        >
+          <Ionicons name="arrow-back" size={28} color={Colors.primary} />
+        </TouchableOpacity>
+      </View>
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -257,6 +268,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  backCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
