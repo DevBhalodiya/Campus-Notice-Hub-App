@@ -71,9 +71,13 @@ export default function AdminDashboard() {
 
   const handleReject = async (noticeId: string) => {
     try {
-      await deleteDoc(doc(db, 'notices', noticeId));
+      await updateDoc(doc(db, 'notices', noticeId), {
+        status: 'rejected',
+        rejectedBy: auth.currentUser?.uid || null,
+        rejectedAt: serverTimestamp(),
+      });
     } catch (error) {
-      Alert.alert('Error', 'Failed to reject (delete) notice.');
+      Alert.alert('Error', 'Failed to reject notice.');
     }
   };
 
