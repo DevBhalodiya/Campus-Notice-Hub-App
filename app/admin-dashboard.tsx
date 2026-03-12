@@ -174,7 +174,7 @@ export default function AdminDashboard() {
     { id: '1', icon: 'add-circle', title: 'New Notice', color: Colors.primary, route: '/admin-create-notice' },
     { id: '2', icon: 'list', title: 'All Notices', color: Colors.secondary, route: '/admin-all-notices' },
     { id: '3', icon: 'bar-chart', title: 'Analytics', color: Colors.success, route: '/admin-analytics' },
-    { id: '4', icon: 'settings', title: 'Settings', color: Colors.warning, route: '/admin-settings' },
+    { id: '4', icon: 'settings', title: 'Settings', color: Colors.warning, route: '/admin-profile' },
   ];
   const handleLogout = () => {
     Alert.alert(

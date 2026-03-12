@@ -53,5 +53,7 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     }
+    ,
+    "projectId": "campus-notice-hub"
   }
 }
