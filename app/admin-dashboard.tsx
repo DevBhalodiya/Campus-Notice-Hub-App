@@ -265,30 +265,36 @@ export default function AdminDashboard() {
             <Text>No pending notices.</Text>
           ) : (
             pendingNotices.map((notice) => (
-              <Card key={notice.id} style={{ marginBottom: 16 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{notice.title}</Text>
-                <Text style={{ marginVertical: 8 }}>{notice.description}</Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Button
-                    title="Approve"
-                    size="sm"
-                    style={{ flex: 1 }}
-                    onPress={() => handleApprove(notice.id)}
-                  />
-                  <Button
-                    title="Reject"
-                    size="sm"
-                    style={{ flex: 1, backgroundColor: Colors.error }}
-                    onPress={() => handleReject(notice.id)}
-                  />
-                  <Button
-                    title="Delete"
-                    size="sm"
-                    style={{ flex: 1, backgroundColor: Colors.error, borderWidth: 1, borderColor: Colors.error }}
-                    onPress={() => confirmDeleteNotice(notice.id)}
-                  />
-                </View>
-              </Card>
+              <TouchableOpacity
+                key={notice.id}
+                activeOpacity={0.85}
+                onPress={() => router.push({ pathname: '/notice-detail', params: { id: notice.id } })}
+              >
+                <Card style={{ marginBottom: 16 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{notice.title}</Text>
+                  <Text style={{ marginVertical: 8 }}>{notice.description}</Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <Button
+                      title="Approve"
+                      size="sm"
+                      style={{ flex: 1 }}
+                      onPress={() => handleApprove(notice.id)}
+                    />
+                    <Button
+                      title="Reject"
+                      size="sm"
+                      style={{ flex: 1, backgroundColor: Colors.error }}
+                      onPress={() => handleReject(notice.id)}
+                    />
+                    <Button
+                      title="Delete"
+                      size="sm"
+                      style={{ flex: 1, backgroundColor: Colors.error, borderWidth: 1, borderColor: Colors.error }}
+                      onPress={() => confirmDeleteNotice(notice.id)}
+                    />
+                  </View>
+                </Card>
+              </TouchableOpacity>
             ))
           )}
         </View>
@@ -302,18 +308,24 @@ export default function AdminDashboard() {
             <Text>No approved notices.</Text>
           ) : (
             approvedNotices.map((notice) => (
-              <Card key={notice.id} style={{ marginBottom: 16 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{notice.title}</Text>
-                <Text style={{ marginVertical: 8 }}>{notice.description}</Text>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <Button
-                    title="Delete"
-                    size="sm"
-                    style={{ flex: 1, backgroundColor: Colors.error, borderWidth: 1, borderColor: Colors.error }}
-                    onPress={() => confirmDeleteNotice(notice.id)}
-                  />
-                </View>
-              </Card>
+              <TouchableOpacity
+                key={notice.id}
+                activeOpacity={0.85}
+                onPress={() => router.push({ pathname: '/notice-detail', params: { id: notice.id } })}
+              >
+                <Card style={{ marginBottom: 16 }}>
+                  <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{notice.title}</Text>
+                  <Text style={{ marginVertical: 8 }}>{notice.description}</Text>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <Button
+                      title="Delete"
+                      size="sm"
+                      style={{ flex: 1, backgroundColor: Colors.error, borderWidth: 1, borderColor: Colors.error }}
+                      onPress={() => confirmDeleteNotice(notice.id)}
+                    />
+                  </View>
+                </Card>
+              </TouchableOpacity>
             ))
           )}
         </View>

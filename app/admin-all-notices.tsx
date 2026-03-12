@@ -10,11 +10,12 @@ import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+
 type Notice = {
   id: string;
   title: string;
   description: string;
-  status: 'approved' | 'pending' | 'rejected' | string;
+  status: 'approved' | 'pending' | 'rejected' | 'draft' | string;
   [key: string]: any;
 };
 
@@ -22,12 +23,14 @@ const noticeStatuses = [
   { key: 'approved', label: 'Approved', color: Colors.success, bg: Colors.successLight },
   { key: 'pending', label: 'Pending', color: Colors.warning, bg: Colors.warningLight },
   { key: 'rejected', label: 'Rejected', color: Colors.error, bg: Colors.errorLight },
+  { key: 'draft', label: 'Draft', color: Colors.textTertiary, bg: Colors.gray200 },
 ];
+
 
 
 export default function AdminAllNotices() {
   const router = useRouter();
-  const [selectedStatus, setSelectedStatus] = useState<'approved' | 'pending' | 'rejected'>('approved');
+  const [selectedStatus, setSelectedStatus] = useState<'approved' | 'pending' | 'rejected' | 'draft'>('approved');
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,7 +58,7 @@ export default function AdminAllNotices() {
           <TouchableOpacity
             key={status.key}
             style={[styles.tab, selectedStatus === status.key && { backgroundColor: status.color + '20' }]}
-            onPress={() => setSelectedStatus(status.key as 'approved' | 'pending' | 'rejected')}
+            onPress={() => setSelectedStatus(status.key as 'approved' | 'pending' | 'rejected' | 'draft')}
           >
             <Text style={[styles.tabText, selectedStatus === status.key && { color: status.color, fontWeight: FontWeight.bold }]}> 
               {status.label}

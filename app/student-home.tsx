@@ -5,6 +5,8 @@ import { Colors } from '@/constants/colors';
 import { db } from '@/constants/firebase';
 import { FontSize, FontWeight, IconSize, Spacing } from '@/constants/spacing';
 import { useUserProfile } from '@/utils/useUserProfile';
+// import { useUserNameByUid } from '@/utils/useUserNameByUid';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -21,6 +23,7 @@ type ApprovedNotice = {
   category?: string;
   createdAt?: any;
   creatorRole?: string;
+  createdBy?: string;
 };
 
 export default function StudentHome() {
@@ -28,6 +31,9 @@ export default function StudentHome() {
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [notices, setNotices] = useState<ApprovedNotice[]>([]);
+  // Store sender names for each notice's createdBy
+  const [senderNames, setSenderNames] = useState<Record<string, string>>({});
+  const [senderNamesLoading, setSenderNamesLoading] = useState(false);
   const { profile, loading: profileLoading } = useUserProfile();
 
   useEffect(() => {
@@ -36,12 +42,32 @@ export default function StudentHome() {
       where('status', '==', 'approved'),
       orderBy('createdAt', 'desc')
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
       const data: ApprovedNotice[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }) as ApprovedNotice);
       setNotices(data);
+
+      // Fetch sender names for all unique createdBy
+      const uniqueUids = Array.from(new Set(data.map((n: any) => n.createdBy).filter(Boolean)));
+      setSenderNamesLoading(true);
+      const namesMap: Record<string, string> = {};
+      await Promise.all(uniqueUids.map(async (uid) => {
+        try {
+          const userDoc = await import('@/constants/firebase').then(m => m.db).then(db => import('firebase/firestore').then(fb => fb.getDoc(fb.doc(db, 'users', uid))));
+          const snap = await userDoc;
+          if (snap.exists()) {
+            namesMap[uid] = snap.data().name || 'Unknown';
+          } else {
+            namesMap[uid] = 'Unknown';
+          }
+        } catch {
+          namesMap[uid] = 'Unknown';
+        }
+      }));
+      setSenderNames(namesMap);
+      setSenderNamesLoading(false);
     });
     return unsubscribe;
   }, []);
@@ -127,9 +153,11 @@ export default function StudentHome() {
                 category: notice.category || 'general',
                 date: notice.createdAt?.toDate ? notice.createdAt.toDate().toLocaleDateString() : '',
                 time: notice.createdAt?.toDate ? notice.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-                author: notice.creatorRole === 'admin' ? 'Admin' : 'Faculty',
+                author: senderNamesLoading
+                  ? 'Loading...'
+                  : senderNames[(notice as any).createdBy] || 'Unknown',
               }}
-              onPress={() => router.push(`/notice-detail?id=${notice.id}`)}
+              onPress={() => router.push(`/student-notice-detail?id=${notice.id}`)}
             />
           ))}
         </View>

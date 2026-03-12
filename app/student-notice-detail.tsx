@@ -6,30 +6,19 @@ import { useUserNameByUid } from '@/utils/useUserNameByUid';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { deleteDoc, doc, getDoc, getDoc as getFirestoreDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default function NoticeDetailScreen() {
+export default function StudentNoticeDetailScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [isBookmarked, setIsBookmarked] = useState(false);
-    // Check if notice is saved
-    useEffect(() => {
-      const checkSaved = async () => {
-        if (!auth.currentUser || !params.id) return;
-        const savedRef = doc(db, 'users', auth.currentUser.uid, 'savedNotices', params.id as string);
-        const snap = await getFirestoreDoc(savedRef);
-        setIsBookmarked(snap.exists());
-      };
-      checkSaved();
-    }, [params.id]);
   const [notice, setNotice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
-  // Fetch real author name if createdBy exists
+  const [isBookmarked, setIsBookmarked] = useState(false);
   const { name: authorName, loading: authorLoading } = useUserNameByUid(notice?.createdBy);
 
   useEffect(() => {
@@ -53,6 +42,16 @@ export default function NoticeDetailScreen() {
       setLoading(false);
     };
     fetchNotice();
+  }, [params.id]);
+
+  useEffect(() => {
+    const checkSaved = async () => {
+      if (!auth.currentUser || !params.id) return;
+      const savedRef = doc(db, 'users', auth.currentUser.uid, 'savedNotices', params.id as string);
+      const snap = await getDoc(savedRef);
+      setIsBookmarked(snap.exists());
+    };
+    checkSaved();
   }, [params.id]);
 
   const handleShare = async () => {
@@ -90,7 +89,6 @@ export default function NoticeDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
-
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -101,11 +99,9 @@ export default function NoticeDetailScreen() {
           <Ionicons name="share-outline" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
       </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Category Badge */}
         <CategoryBadge category={notice.category || 'general'} />
-
         {/* Image Preview with popup */}
         {notice.imageUrl ? (
           <>
@@ -127,35 +123,41 @@ export default function NoticeDetailScreen() {
             </Modal>
           </>
         ) : null}
-
         {/* Title */}
         <Text style={styles.title}>{notice.title}</Text>
-
         {/* Meta Info */}
         <View style={styles.metaContainer}>
           <View style={styles.metaItem}>
             <Ionicons name="calendar-outline" size={16} color={Colors.textTertiary} />
             <Text style={styles.metaText}>{notice.createdAt ? (notice.createdAt.toDate ? notice.createdAt.toDate().toLocaleDateString() : String(notice.createdAt)) : ''}</Text>
           </View>
-          {/* You can add more meta info here if available */}
         </View>
-
         {/* Author Info */}
         <View style={styles.authorCard}>
           <View style={styles.authorAvatar}>
             <Ionicons name="person" size={24} color={Colors.primary} />
           </View>
           <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{authorLoading ? 'Loading...' : authorName || 'Unknown'}</Text>
+            {/* Debug line for UID */}
+            <Text style={{ fontSize: 10, color: Colors.textSecondary }}>Debug UID: {notice?.createdBy || 'undefined'}</Text>
+            <Text style={styles.authorName}>
+              {authorLoading
+                ? 'Loading author...'
+                : authorName
+                  ? authorName
+                  : 'Unknown'}
+            </Text>
             <Text style={styles.authorRole}>{notice.authorRole || notice.creatorRole || ''}</Text>
+            {/* Show error if fetching author fails */}
+            {error ? (
+              <Text style={{ color: Colors.error, fontSize: 12 }}>{error}</Text>
+            ) : null}
           </View>
         </View>
-
         {/* Content */}
         <View style={styles.contentCard}>
           <Text style={styles.noticeContent}>{notice.description || notice.content || ''}</Text>
         </View>
-
         {/* Actions */}
         <View style={styles.actions}>
           <TouchableOpacity
@@ -186,64 +188,6 @@ export default function NoticeDetailScreen() {
             <Text style={styles.actionText}>Share</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Admin Actions for Pending Notices */}
-        {auth.currentUser?.uid && notice.status === 'pending' && (
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: Colors.primary, padding: 14, borderRadius: 8, alignItems: 'center' }}
-              onPress={async () => {
-                if (!auth.currentUser) return;
-                try {
-                  await updateDoc(doc(db, 'notices', notice.id), {
-                    status: 'approved',
-                    approvedBy: auth.currentUser.uid,
-                    approvedAt: new Date(),
-                  });
-                  Alert.alert('Success', 'Notice approved!');
-                  router.back();
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to approve notice.');
-                }
-              }}
-            >
-              <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Approve</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: Colors.error, padding: 14, borderRadius: 8, alignItems: 'center' }}
-              onPress={async () => {
-                if (!auth.currentUser) return;
-                try {
-                  await updateDoc(doc(db, 'notices', notice.id), {
-                    status: 'rejected',
-                    rejectedBy: auth.currentUser.uid,
-                    rejectedAt: new Date(),
-                  });
-                  Alert.alert('Notice Rejected', 'Notice has been rejected.');
-                  router.back();
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to reject notice.');
-                }
-              }}
-            >
-              <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Reject</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: Colors.error, padding: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: Colors.error }}
-              onPress={async () => {
-                try {
-                  await deleteDoc(doc(db, 'notices', notice.id));
-                  Alert.alert('Deleted', 'Notice deleted.');
-                  router.back();
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to delete notice.');
-                }
-              }}
-            >
-              <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

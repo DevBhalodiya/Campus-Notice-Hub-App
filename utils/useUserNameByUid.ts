@@ -18,12 +18,13 @@ export function useUserNameByUid(uid?: string) {
       try {
         const userDoc = await getDoc(doc(db, 'users', uid));
         if (userDoc.exists()) {
-          setName(userDoc.data().name || null);
+          setName(userDoc.data().name || uid); // fallback to UID if name missing
         } else {
-          setName(null);
+          setName(uid); // fallback to UID if user not found
         }
       } catch (e: any) {
         setError(e.message || 'Failed to fetch user name');
+        setName(uid); // fallback to UID on error
       } finally {
         setLoading(false);
       }

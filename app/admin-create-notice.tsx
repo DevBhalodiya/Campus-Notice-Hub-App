@@ -70,6 +70,46 @@ export default function CreateNoticeScreen() {
     }
   };
 
+
+  const handleSaveDraft = async () => {
+    if (!title && !content) {
+      Alert.alert('Error', 'Please enter a title or content to save as draft.');
+      return;
+    }
+    setLoading(true);
+    let imageUrl = '';
+    try {
+      if (imageUri) {
+        imageUrl = await uploadImageToCloudinary(imageUri);
+      }
+      await addDoc(collection(db, 'notices'), {
+        title: title.trim(),
+        description: content.trim(),
+        category: selectedCategory,
+        createdBy: auth.currentUser?.uid,
+        creatorRole: 'admin',
+        status: 'draft',
+        approvedBy: null,
+        approvedAt: null,
+        createdAt: serverTimestamp(),
+        imageUrl: imageUrl || '',
+      });
+      setTitle('');
+      setContent('');
+      setImageUri(null);
+      Alert.alert('Saved', 'Notice saved as draft!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save draft.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!title || !content) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -242,10 +282,11 @@ export default function CreateNoticeScreen() {
           <View style={styles.actions}>
             <Button
               title="Save as Draft"
-              onPress={() => {}}
+              onPress={handleSaveDraft}
               variant="outline"
               size="lg"
               style={styles.draftButton}
+              disabled={loading}
             />
             <Button
               title="Publish Notice"
