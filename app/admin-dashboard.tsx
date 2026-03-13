@@ -9,7 +9,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { collection, deleteDoc, doc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type PendingNotice = {
@@ -21,6 +21,10 @@ type PendingNotice = {
 };
 
 export default function AdminDashboard() {
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectNoticeId, setRejectNoticeId] = useState<string | null>(null);
   const router = useRouter();
   const [pendingNotices, setPendingNotices] = useState<PendingNotice[]>([]);
   const [approvedNotices, setApprovedNotices] = useState<PendingNotice[]>([]);
@@ -69,15 +73,23 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleReject = async (noticeId: string) => {
+  const handleReject = async () => {
+    if (!rejectNoticeId) return;
+    setRejecting(true);
     try {
-      await updateDoc(doc(db, 'notices', noticeId), {
+      await updateDoc(doc(db, 'notices', rejectNoticeId), {
         status: 'rejected',
         rejectedBy: auth.currentUser?.uid || null,
         rejectedAt: serverTimestamp(),
+        rejectionReason: rejectReason.trim(),
       });
+      setShowRejectModal(false);
+      setRejectReason('');
+      setRejectNoticeId(null);
     } catch (error) {
       Alert.alert('Error', 'Failed to reject notice.');
+    } finally {
+      setRejecting(false);
     }
   };
 
@@ -281,8 +293,46 @@ export default function AdminDashboard() {
                       title="Reject"
                       size="sm"
                       style={{ flex: 1, backgroundColor: Colors.error }}
-                      onPress={() => handleReject(notice.id)}
+                      onPress={() => {
+                        setRejectNoticeId(notice.id);
+                        setShowRejectModal(true);
+                      }}
                     />
+                          {/* Reject Reason Modal */}
+                          <Modal visible={showRejectModal} transparent animationType="fade">
+                            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' }}>
+                              <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 24, width: '85%' }}>
+                                <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 12, color: Colors.error }}>Reject Notice</Text>
+                                <Text style={{ marginBottom: 8 }}>Please provide a reason for rejection:</Text>
+                                <TextInput
+                                  value={rejectReason}
+                                  onChangeText={setRejectReason}
+                                  placeholder="Enter reason..."
+                                  style={{ borderWidth: 1, borderColor: Colors.gray200, borderRadius: 8, padding: 10, minHeight: 40, marginBottom: 16 }}
+                                  multiline
+                                />
+                                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 12 }}>
+                                  <TouchableOpacity
+                                    onPress={() => {
+                                      setShowRejectModal(false);
+                                      setRejectReason('');
+                                      setRejectNoticeId(null);
+                                    }}
+                                    style={{ paddingVertical: 8, paddingHorizontal: 16 }}
+                                  >
+                                    <Text style={{ color: Colors.textSecondary }}>Cancel</Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    disabled={!rejectReason.trim() || rejecting}
+                                    onPress={handleReject}
+                                    style={{ backgroundColor: Colors.error, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 16, opacity: !rejectReason.trim() || rejecting ? 0.6 : 1 }}
+                                  >
+                                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Reject</Text>
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
+                            </View>
+                          </Modal>
                     <Button
                       title="Delete"
                       size="sm"
