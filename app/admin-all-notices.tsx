@@ -5,7 +5,8 @@ import { FontSize, FontWeight, Spacing } from '@/constants/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { auth } from '@/constants/firebase';
+import { collection, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,11 +29,31 @@ const noticeStatuses = [
 
 
 
+
 export default function AdminAllNotices() {
   const router = useRouter();
   const [selectedStatus, setSelectedStatus] = useState<'approved' | 'pending' | 'rejected' | 'draft'>('approved');
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [savedLoading, setSavedLoading] = useState(true);
+  const user = auth.currentUser;
+
+  // Fetch saved notices for current user (admin)
+  useEffect(() => {
+    async function fetchSaved() {
+      setSavedLoading(true);
+      try {
+        if (!user) return setSavedIds([]);
+        const snap = await getDocs(collection(db, 'users', user.uid, 'savedNotices'));
+        setSavedIds(snap.docs.map(doc => doc.id));
+      } catch {
+        setSavedIds([]);
+      }
+      setSavedLoading(false);
+    }
+    fetchSaved();
+  }, [user]);
 
   useEffect(() => {
     setLoading(true);
@@ -86,6 +107,15 @@ export default function AdminAllNotices() {
                   >
                     {noticeStatuses.find(s => s.key === notice.status)?.label || notice.status}
                   </Text>
+                  {/* Saved indicator */}
+                  {savedLoading ? null : (
+                    <Ionicons
+                      name={savedIds.includes(notice.id) ? 'bookmark' : 'bookmark-outline'}
+                      size={18}
+                      color={savedIds.includes(notice.id) ? Colors.primary : Colors.textTertiary}
+                      style={{ marginLeft: 8 }}
+                    />
+                  )}
                   <Ionicons name="eye-outline" size={18} color={Colors.primary} style={{ marginLeft: 8 }} />
                 </View>
               </TouchableOpacity>

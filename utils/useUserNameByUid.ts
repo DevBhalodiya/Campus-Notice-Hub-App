@@ -16,15 +16,15 @@ export function useUserNameByUid(uid?: string) {
     async function fetchName() {
       setLoading(true);
       try {
-        const userDoc = await getDoc(doc(db, 'users', uid));
+        const userDoc = await getDoc(doc(db, 'users', uid ?? ''));
         if (userDoc.exists()) {
-          setName(userDoc.data().name || uid); // fallback to UID if name missing
+          setName(userDoc.data().name || uid || ''); // fallback to UID if name missing
         } else {
-          setName(uid); // fallback to UID if user not found
+          setName(uid || ''); // fallback to UID if user not found
         }
       } catch (e: any) {
         setError(e.message || 'Failed to fetch user name');
-        setName(uid); // fallback to UID on error
+        setName(uid || ''); // fallback to UID on error
       } finally {
         setLoading(false);
       }

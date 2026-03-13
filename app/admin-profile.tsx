@@ -90,7 +90,7 @@ export default function AdminProfile() {
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      {/* <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem} onPress={() => router.push('/admin-dashboard')}>
           <Ionicons name="home-outline" size={24} color={Colors.textTertiary} />
           <Text style={styles.navText}>Home</Text>
@@ -107,7 +107,7 @@ export default function AdminProfile() {
           <Ionicons name="person" size={24} color={Colors.primary} />
           <Text style={[styles.navText, styles.navTextActive]}>Profile</Text>
         </TouchableOpacity>
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 }

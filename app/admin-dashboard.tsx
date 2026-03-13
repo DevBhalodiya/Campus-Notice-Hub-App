@@ -200,9 +200,6 @@ export default function AdminDashboard() {
       <StatusBar style="light" />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={Colors.white} />
-        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.greeting}>
             {profileLoading
