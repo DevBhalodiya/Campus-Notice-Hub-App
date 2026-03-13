@@ -187,6 +187,31 @@ export default function NoticeDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Faculty Action: Submit Draft for Approval */}
+        {auth.currentUser?.uid &&
+          notice.status === 'draft' &&
+          notice.createdBy === auth.currentUser.uid &&
+          (notice.creatorRole === 'faculty' || notice.authorRole === 'faculty') && (
+            <View style={{ marginTop: 24 }}>
+              <TouchableOpacity
+                style={{ backgroundColor: Colors.primary, padding: 16, borderRadius: 8, alignItems: 'center' }}
+                onPress={async () => {
+                  try {
+                    await updateDoc(doc(db, 'notices', notice.id), {
+                      status: 'pending',
+                    });
+                    Alert.alert('Submitted', 'Notice submitted for admin approval!');
+                    router.back();
+                  } catch (e) {
+                    Alert.alert('Error', 'Failed to submit notice.');
+                  }
+                }}
+              >
+                <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Submit for Approval</Text>
+              </TouchableOpacity>
+            </View>
+        )}
+
         {/* Admin Actions for Pending Notices */}
         {auth.currentUser?.uid && notice.status === 'pending' && (
           <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>

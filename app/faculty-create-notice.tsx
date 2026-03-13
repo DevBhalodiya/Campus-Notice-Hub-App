@@ -95,6 +95,46 @@ export default function FacultyCreateNotice() {
     }
   };
 
+
+  const handleSaveDraft = async () => {
+    if (!title && !content) {
+      Alert.alert('Error', 'Please enter a title or content to save as draft.');
+      return;
+    }
+    setLoading(true);
+    let imageUrl = '';
+    try {
+      if (imageUri) {
+        imageUrl = await uploadImageToCloudinary(imageUri);
+      }
+      await addDoc(collection(db, 'notices'), {
+        title: title.trim(),
+        description: content.trim(),
+        category: selectedCategory,
+        createdBy: auth.currentUser?.uid,
+        creatorRole: 'faculty',
+        status: 'draft',
+        approvedBy: null,
+        approvedAt: null,
+        createdAt: serverTimestamp(),
+        imageUrl: imageUrl || '',
+      });
+      setTitle('');
+      setContent('');
+      setImageUri(null);
+      Alert.alert('Saved', 'Notice saved as draft!', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to save draft.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!title || !content) {
       Alert.alert("Error", "Please fill in all fields");
@@ -175,6 +215,27 @@ export default function FacultyCreateNotice() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
+      {/* Back Button */}
+      <View style={{ padding: 16, paddingBottom: 0 }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 20,
+            backgroundColor: Colors.gray100,
+            justifyContent: 'center',
+            alignItems: 'center',
+            shadowColor: '#000',
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 2,
+          }}
+        >
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -325,10 +386,11 @@ export default function FacultyCreateNotice() {
           <View style={styles.actions}>
             <Button
               title="Save as Draft"
-              onPress={() => {}}
+              onPress={handleSaveDraft}
               variant="outline"
               size="lg"
               style={styles.draftButton}
+              loading={loading}
             />
             <Button
               title="Publish Notice"

@@ -1,5 +1,5 @@
 
-import { NoticeCard } from '@/components/notices/NoticeCard';
+import { Card } from '@/components/common/Card';
 import { Colors } from '@/constants/colors';
 import { auth, db } from '@/constants/firebase';
 import { FontSize, FontWeight, Spacing } from '@/constants/spacing';
@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type MyNotice = {
@@ -20,55 +20,46 @@ type MyNotice = {
   createdAt?: any;
 };
 
+
 export default function FacultyMyNotices() {
   const router = useRouter();
+  const [selectedStatus, setSelectedStatus] = useState<'approved' | 'pending' | 'rejected' | 'draft'>('approved');
   const [notices, setNotices] = useState<MyNotice[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const noticeStatuses = [
+    { key: 'approved', label: 'Approved', color: Colors.success, bg: Colors.successLight },
+    { key: 'pending', label: 'Pending', color: Colors.warning, bg: Colors.warningLight },
+    { key: 'rejected', label: 'Rejected', color: Colors.error, bg: Colors.errorLight },
+    { key: 'draft', label: 'Draft', color: Colors.textTertiary, bg: Colors.gray200 },
+  ];
+
   useEffect(() => {
     if (!auth.currentUser) return;
+    setLoading(true);
     const q = query(
       collection(db, 'notices'),
       where('createdBy', '==', auth.currentUser.uid),
+      where('status', '==', selectedStatus),
       orderBy('createdAt', 'desc')
     );
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const data: MyNotice[] = snapshot.docs.map((doc) => {
-          const d = doc.data();
-          return {
-            id: doc.id,
-            title: d.title || '',
-            description: d.description || '',
-            category: d.category || '',
-            status: d.status || '',
-            createdAt: d.createdAt,
-          };
-        });
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data: MyNotice[] = snapshot.docs.map((doc) => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          title: d.title || '',
+          description: d.description || '',
+          category: d.category || '',
+          status: d.status || '',
+          createdAt: d.createdAt,
+        };
+      });
       setNotices(data);
       setLoading(false);
     });
-    return unsubscribe;
-  }, []);
-
-  const getStatusBadge = (status: string) => {
-    let color = Colors.gray400;
-    let label = status;
-    if (status === 'pending') {
-      color = Colors.warning;
-      label = 'Pending';
-    } else if (status === 'approved') {
-      color = Colors.success;
-      label = 'Approved';
-    } else if (status === 'rejected') {
-      color = Colors.error;
-      label = 'Rejected';
-    }
-    return (
-      <View style={{ backgroundColor: color + '30', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, alignSelf: 'flex-start', marginBottom: 6 }}>
-        <Text style={{ color, fontWeight: 'bold', fontSize: 12 }}>{label}</Text>
-      </View>
-    );
-  };
+    return () => unsubscribe();
+  }, [selectedStatus]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -77,50 +68,49 @@ export default function FacultyMyNotices() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={28} color="#6C63FF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Notices</Text>
+        <Text style={styles.headerTitle}>All Notices</Text>
       </View>
-      {loading ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-        </View>
-      ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {notices.length === 0 ? (
-            <Text style={{ textAlign: 'center', marginTop: 32, color: Colors.textSecondary }}>No notices found.</Text>
-          ) : (
-            notices.map((notice) => (
-              <View key={notice.id} style={{ marginBottom: 16 }}>
-                {getStatusBadge(notice.status)}
-                <NoticeCard
-                  notice={{
-                    id: notice.id,
-                    title: notice.title,
-                    content: notice.description,
-                    category: notice.category || 'general',
-                    date: '',
-                    time: '',
-                    author: '',
-                  }}
-                  onPress={
-                    notice.status === 'pending'
-                      ? () => router.push(`/faculty-edit-notice?id=${notice.id}`)
-                      : () => {}
-                  }
-                />
-                {/* Edit button only for pending */}
-                {notice.status === 'pending' && (
-                  <TouchableOpacity
-                    style={{ alignSelf: 'flex-end', marginTop: -8, marginBottom: 8 }}
-                    onPress={() => router.push(`/faculty-edit-notice?id=${notice.id}`)}
+      <View style={styles.tabs}>
+        {noticeStatuses.map((status) => (
+          <TouchableOpacity
+            key={status.key}
+            style={[styles.tab, selectedStatus === status.key && { backgroundColor: status.color + '20' }]}
+            onPress={() => setSelectedStatus(status.key as any)}
+          >
+            <Text style={[styles.tabText, selectedStatus === status.key && { color: status.color, fontWeight: FontWeight.bold }]}> 
+              {status.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {loading ? (
+          <Text style={styles.loadingText}>Loading...</Text>
+        ) : notices.length === 0 ? (
+          <Text style={styles.emptyText}>No {selectedStatus} notices found.</Text>
+        ) : (
+          notices.map((notice) => (
+            <Card key={notice.id} style={styles.noticeCard}>
+              <TouchableOpacity onPress={() => router.push({ pathname: '/notice-detail', params: { id: notice.id } })}>
+                <Text style={styles.noticeTitle}>{notice.title}</Text>
+                <Text style={styles.noticeDesc} numberOfLines={2}>{notice.description}</Text>
+                <View style={styles.noticeMeta}>
+                  <Text
+                    style={[styles.statusBadge, {
+                      backgroundColor: noticeStatuses.find(s => s.key === notice.status)?.bg || Colors.gray200,
+                      color: noticeStatuses.find(s => s.key === notice.status)?.color || Colors.textPrimary,
+                    }]}
                   >
-                    <Text style={{ color: Colors.primary, fontWeight: 'bold', fontSize: 14 }}>Edit</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))
-          )}
-        </ScrollView>
-      )}
+                    {noticeStatuses.find(s => s.key === notice.status)?.label || notice.status}
+                  </Text>
+                  <Ionicons name="bookmark-outline" size={18} color={Colors.textTertiary} style={{ marginLeft: 8 }} />
+                  <Ionicons name="eye-outline" size={18} color={Colors.primary} style={{ marginLeft: 8 }} />
+                </View>
+              </TouchableOpacity>
+            </Card>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -133,11 +123,38 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.lg,
+    paddingVertical: Spacing.lg,
     backgroundColor: Colors.surface,
   },
+    tabs: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      backgroundColor: Colors.surface,
+      paddingVertical: Spacing.sm,
+      marginBottom: Spacing.md,
+    },
+    tab: {
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.sm,
+      borderRadius: 9999,
+    },
+    tabText: { fontSize: FontSize.md, color: Colors.textSecondary },
+    loadingText: { textAlign: 'center', marginTop: 32, color: Colors.textSecondary },
+    emptyText: { textAlign: 'center', marginTop: 32, color: Colors.textSecondary },
+    noticeCard: { marginBottom: Spacing.lg, padding: Spacing.lg },
+    noticeTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+    noticeDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginVertical: Spacing.xs },
+    noticeMeta: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.sm },
+    statusBadge: {
+      fontSize: FontSize.xs,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: Spacing.xs,
+      borderRadius: 9999,
+      overflow: 'hidden',
+      marginRight: 8,
+    },
   backButton: {
     marginRight: Spacing.lg,
     padding: Spacing.sm,
