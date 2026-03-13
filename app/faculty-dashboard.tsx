@@ -39,6 +39,7 @@ export default function FacultyDashboard() {
             date: d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '',
             time: d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
             author: profile.name,
+            status: d.status,
           };
         });
         setRecentNotices(data);
@@ -124,7 +125,13 @@ export default function FacultyDashboard() {
               <NoticeCard
                 key={notice.id}
                 notice={notice}
-                onPress={() => router.push(`/faculty-edit-notice?id=${notice.id}`)}
+                onPress={() => {
+                  if (notice.status === 'Pending') {
+                    router.push(`/faculty-edit-notice?id=${notice.id}`);
+                  } else {
+                    router.push(`/notice-detail?id=${notice.id}`);
+                  }
+                }}
               />
             ))
           )}

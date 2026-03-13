@@ -212,62 +212,79 @@ export default function NoticeDetailScreen() {
             </View>
         )}
 
-        {/* Admin Actions for Pending Notices */}
-        {auth.currentUser?.uid && notice.status === 'pending' && (
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: Colors.primary, padding: 14, borderRadius: 8, alignItems: 'center' }}
-              onPress={async () => {
-                if (!auth.currentUser) return;
-                try {
-                  await updateDoc(doc(db, 'notices', notice.id), {
-                    status: 'approved',
-                    approvedBy: auth.currentUser.uid,
-                    approvedAt: new Date(),
-                  });
-                  Alert.alert('Success', 'Notice approved!');
-                  router.back();
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to approve notice.');
-                }
-              }}
-            >
-              <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Approve</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: Colors.error, padding: 14, borderRadius: 8, alignItems: 'center' }}
-              onPress={async () => {
-                if (!auth.currentUser) return;
-                try {
-                  await updateDoc(doc(db, 'notices', notice.id), {
-                    status: 'rejected',
-                    rejectedBy: auth.currentUser.uid,
-                    rejectedAt: new Date(),
-                  });
-                  Alert.alert('Notice Rejected', 'Notice has been rejected.');
-                  router.back();
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to reject notice.');
-                }
-              }}
-            >
-              <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Reject</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ flex: 1, backgroundColor: Colors.error, padding: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: Colors.error }}
-              onPress={async () => {
-                try {
-                  await deleteDoc(doc(db, 'notices', notice.id));
-                  Alert.alert('Deleted', 'Notice deleted.');
-                  router.back();
-                } catch (e) {
-                  Alert.alert('Error', 'Failed to delete notice.');
-                }
-              }}
-            >
-              <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Delete</Text>
-            </TouchableOpacity>
-          </View>
+        {/* Faculty: Edit Pending Notice */}
+        {auth.currentUser?.uid &&
+          notice.status === 'pending' &&
+          notice.createdBy === auth.currentUser.uid &&
+          (notice.creatorRole === 'faculty' || notice.authorRole === 'faculty') && (
+            <View style={{ marginTop: 24 }}>
+              <TouchableOpacity
+                style={{ backgroundColor: Colors.primary, padding: 16, borderRadius: 8, alignItems: 'center' }}
+                onPress={() => router.push(`/faculty-edit-notice?id=${notice.id}`)}
+              >
+                <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Edit Notice</Text>
+              </TouchableOpacity>
+            </View>
+        )}
+
+        {/* Admin Actions for Pending Notices (not faculty's own) */}
+        {auth.currentUser?.uid &&
+          notice.status === 'pending' &&
+          (!notice.createdBy || notice.createdBy !== auth.currentUser.uid || (notice.creatorRole !== 'faculty' && notice.authorRole !== 'faculty')) && (
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: Colors.primary, padding: 14, borderRadius: 8, alignItems: 'center' }}
+                onPress={async () => {
+                  if (!auth.currentUser) return;
+                  try {
+                    await updateDoc(doc(db, 'notices', notice.id), {
+                      status: 'approved',
+                      approvedBy: auth.currentUser.uid,
+                      approvedAt: new Date(),
+                    });
+                    Alert.alert('Success', 'Notice approved!');
+                    router.back();
+                  } catch (e) {
+                    Alert.alert('Error', 'Failed to approve notice.');
+                  }
+                }}
+              >
+                <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Approve</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: Colors.error, padding: 14, borderRadius: 8, alignItems: 'center' }}
+                onPress={async () => {
+                  if (!auth.currentUser) return;
+                  try {
+                    await updateDoc(doc(db, 'notices', notice.id), {
+                      status: 'rejected',
+                      rejectedBy: auth.currentUser.uid,
+                      rejectedAt: new Date(),
+                    });
+                    Alert.alert('Notice Rejected', 'Notice has been rejected.');
+                    router.back();
+                  } catch (e) {
+                    Alert.alert('Error', 'Failed to reject notice.');
+                  }
+                }}
+              >
+                <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Reject</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: Colors.error, padding: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: Colors.error }}
+                onPress={async () => {
+                  try {
+                    await deleteDoc(doc(db, 'notices', notice.id));
+                    Alert.alert('Deleted', 'Notice deleted.');
+                    router.back();
+                  } catch (e) {
+                    Alert.alert('Error', 'Failed to delete notice.');
+                  }
+                }}
+              >
+                <Text style={{ color: Colors.white, fontWeight: 'bold' }}>Delete</Text>
+              </TouchableOpacity>
+            </View>
         )}
       </ScrollView>
     </SafeAreaView>
