@@ -168,15 +168,18 @@ export default function StudentHome() {
           <Ionicons name="home" size={24} color={Colors.primary} />
           <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-bookmarks')}>
-          <Ionicons name="bookmark-outline" size={24} color={Colors.textTertiary} />
-          <Text style={styles.navText}>Saved</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-profile')}>
-          <Ionicons name="person-outline" size={24} color={Colors.textTertiary} />
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
+              <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-all-notices')}>
+                <Ionicons name="grid-outline" size={24} color={Colors.textTertiary} />
+                <Text style={styles.navText}>Categories</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-bookmarks')}>
+                <Ionicons name="bookmark-outline" size={24} color={Colors.textTertiary} />
+                <Text style={styles.navText}>Saved</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-profile')}>
+                <Ionicons name="person-outline" size={24} color={Colors.textTertiary} />
+                <Text style={styles.navText}>Profile</Text>
+              </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

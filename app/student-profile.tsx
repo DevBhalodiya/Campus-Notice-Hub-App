@@ -105,7 +105,7 @@ export default function StudentProfile() {
           <Ionicons name="home-outline" size={24} color={Colors.textTertiary} />
           <Text style={styles.navText}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-categories')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/student-all-notices')}>
           <Ionicons name="grid-outline" size={24} color={Colors.textTertiary} />
           <Text style={styles.navText}>Categories</Text>
         </TouchableOpacity>

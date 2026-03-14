@@ -64,7 +64,7 @@ export default function StudentAllNotices() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/student-home')}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/student-home')}>
           <Ionicons name="arrow-back" size={28} color={Colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Notices</Text>
