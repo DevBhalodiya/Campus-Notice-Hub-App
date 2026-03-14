@@ -7,10 +7,10 @@ export default function Index() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to login screen on app start
+    // Redirect to splash screen on app start
     setTimeout(() => {
-      router.replace('/login');
-    }, 500);
+      router.replace('/splash');
+    }, 10);
   }, []);
 
   return (

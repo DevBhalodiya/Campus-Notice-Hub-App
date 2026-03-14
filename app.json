@@ -13,7 +13,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/app-icon.png",
           "color": "#6366F1",
           "defaultChannel": "default",
           "sounds": []
@@ -47,13 +47,10 @@
         "android.permission.VIBRATE",
         "android.permission.POST_NOTIFICATIONS"
       ]
-      // "package": "com.yashpatel25.CampusNoticeHub"
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     }
-    ,
-    "projectId": "campus-notice-hub"
   }
 }
