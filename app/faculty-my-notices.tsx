@@ -68,7 +68,7 @@ export default function FacultyMyNotices() {
       <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#6C63FF" />
+          <Ionicons name="arrow-back" size={28} color={Colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>All Notices</Text>
       </View>
@@ -76,10 +76,10 @@ export default function FacultyMyNotices() {
         {noticeStatuses.map((status) => (
           <TouchableOpacity
             key={status.key}
-            style={[styles.tab, selectedStatus === status.key && { backgroundColor: status.color + '20' }]}
+            style={[styles.tab, selectedStatus === status.key && styles.selectedTab]}
             onPress={() => setSelectedStatus(status.key as any)}
           >
-            <Text style={[styles.tabText, selectedStatus === status.key && { color: status.color, fontWeight: FontWeight.bold }]}> 
+            <Text style={[styles.tabText, selectedStatus === status.key && styles.selectedTabText]}>
               {status.label}
             </Text>
           </TouchableOpacity>
@@ -98,10 +98,13 @@ export default function FacultyMyNotices() {
                 <Text style={styles.noticeDesc} numberOfLines={2}>{notice.description}</Text>
                 <View style={styles.noticeMeta}>
                   <Text
-                    style={[styles.statusBadge, {
-                      backgroundColor: noticeStatuses.find(s => s.key === notice.status)?.bg || Colors.gray200,
-                      color: noticeStatuses.find(s => s.key === notice.status)?.color || Colors.textPrimary,
-                    }]}
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor: noticeStatuses.find(s => s.key === notice.status)?.bg || Colors.gray200,
+                        color: noticeStatuses.find(s => s.key === notice.status)?.color || Colors.textPrimary,
+                      },
+                    ]}
                   >
                     {noticeStatuses.find(s => s.key === notice.status)?.label || notice.status}
                   </Text>
@@ -109,9 +112,9 @@ export default function FacultyMyNotices() {
                     name={savedNoticeIds.includes(notice.id) ? 'bookmark' : 'bookmark-outline'}
                     size={18}
                     color={savedNoticeIds.includes(notice.id) ? Colors.primary : Colors.textTertiary}
-                    style={{ marginLeft: 8 }}
+                    style={{ marginLeft: 12, marginRight: 4 }}
                   />
-                  <Ionicons name="eye-outline" size={18} color={Colors.primary} style={{ marginLeft: 8 }} />
+                  <Ionicons name="eye-outline" size={18} color={Colors.primary} style={{ marginLeft: 4 }} />
                 </View>
               </TouchableOpacity>
             </Card>
@@ -125,43 +128,16 @@ export default function FacultyMyNotices() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F6F8FB', // light gray background
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.lg,
-    backgroundColor: Colors.surface,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.md,
+    backgroundColor: '#F6F8FB',
   },
-    tabs: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      backgroundColor: Colors.surface,
-      paddingVertical: Spacing.sm,
-      marginBottom: Spacing.md,
-    },
-    tab: {
-      paddingHorizontal: Spacing.xl,
-      paddingVertical: Spacing.sm,
-      borderRadius: 9999,
-    },
-    tabText: { fontSize: FontSize.md, color: Colors.textSecondary },
-    loadingText: { textAlign: 'center', marginTop: 32, color: Colors.textSecondary },
-    emptyText: { textAlign: 'center', marginTop: 32, color: Colors.textSecondary },
-    noticeCard: { marginBottom: Spacing.lg, padding: Spacing.lg },
-    noticeTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-    noticeDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginVertical: Spacing.xs },
-    noticeMeta: { flexDirection: 'row', alignItems: 'center', marginTop: Spacing.sm },
-    statusBadge: {
-      fontSize: FontSize.xs,
-      paddingHorizontal: Spacing.md,
-      paddingVertical: Spacing.xs,
-      borderRadius: 9999,
-      overflow: 'hidden',
-      marginRight: 8,
-    },
   backButton: {
     marginRight: Spacing.lg,
     padding: Spacing.sm,
@@ -171,9 +147,78 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.bold,
     color: Colors.primary,
     flex: 1,
+    marginLeft: 0,
   },
+  tabs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F6F8FB',
+    paddingHorizontal: Spacing.xl,
+    marginBottom: Spacing.md,
+  },
+  tab: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  selectedTab: {
+    backgroundColor: Colors.primary + '20',
+  },
+  tabText: {
+    fontSize: FontSize.md,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  selectedTabText: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+  },
+  loadingText: { textAlign: 'center', marginTop: 32, color: Colors.textSecondary },
+  emptyText: { textAlign: 'center', marginTop: 32, color: Colors.textSecondary },
   content: {
     flex: 1,
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: 0,
+  },
+  noticeCard: {
+    marginBottom: 20,
+    padding: Spacing.lg,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    // shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    // shadow for Android
+    elevation: 4,
+  },
+  noticeTitle: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  noticeDesc: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginBottom: 8,
+  },
+  noticeMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  statusBadge: {
+    fontSize: FontSize.xs,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    overflow: 'hidden',
+    marginRight: 8,
+    fontWeight: 'bold',
+    minWidth: 70,
+    textAlign: 'center',
   },
 });
