@@ -120,7 +120,7 @@ export default function StudentHome() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Categories</Text>
-            <TouchableOpacity onPress={() => router.push('/student-categories')}>
+            <TouchableOpacity onPress={() => router.push('/student-all-notices')}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
