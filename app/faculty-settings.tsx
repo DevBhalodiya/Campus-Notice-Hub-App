@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
+
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -38,14 +39,13 @@ export default function FacultySettings() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerBackIcon} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={28} color="#6C63FF" />
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={styles.headerTitle}>Profile</Text>
         <View style={styles.placeholder} />
       </View>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Profile Info */}
         <View style={styles.profileSection}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
@@ -63,11 +63,10 @@ export default function FacultySettings() {
           </Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>
-              {profileLoading ? '' : profile ? profile.role : 'Role'}
+              {profileLoading ? '' : profile ? String(profile.role).toLowerCase() : 'faculty'}
             </Text>
           </View>
         </View>
-        {/* Options */}
         <View style={styles.optionsSection}>
           {profileOptions.map((option) => (
             <TouchableOpacity
@@ -85,8 +84,8 @@ export default function FacultySettings() {
             </TouchableOpacity>
           ))}
         </View>
-        {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={22} color={Colors.error} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -101,121 +100,123 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.lg,
+    paddingVertical: Spacing.lg,
     backgroundColor: Colors.surface,
+  },
+  backButton: {
+    padding: Spacing.xs,
   },
   headerTitle: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    color: Colors.primary,
-    flex: 1,
+    color: Colors.textPrimary,
   },
   placeholder: {
-    width: 24,
+    width: 40,
   },
   content: {
     flex: 1,
-    padding: Spacing.xl,
   },
   profileSection: {
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    paddingVertical: Spacing.xxxl,
+    backgroundColor: Colors.surface,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.primaryLight,
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.full,
+    backgroundColor: Colors.primaryLight + '20',
     alignItems: 'center',
     justifyContent: 'center',
   },
   editAvatarButton: {
     position: 'absolute',
-    right: 0,
     bottom: 0,
+    right: 0,
     backgroundColor: Colors.primary,
-    borderRadius: 16,
-    padding: 4,
-    borderWidth: 2,
+    width: 32,
+    height: 32,
+    borderRadius: BorderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
     borderColor: Colors.surface,
   },
   name: {
-    fontSize: FontSize.lg,
+    fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold,
     color: Colors.textPrimary,
-    marginBottom: 2,
-    maxWidth: 220,
+    marginBottom: Spacing.xs,
   },
   email: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.md,
     color: Colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: Spacing.md,
   },
   badge: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: BorderRadius.sm,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 2,
-    marginTop: 4,
-    marginBottom: 8,
+    backgroundColor: Colors.primaryLight + '20',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
   },
   badgeText: {
-    color: Colors.primary,
-    fontWeight: FontWeight.semibold,
     fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+    color: Colors.primary,
   },
   optionsSection: {
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.gray200,
-  },
-  headerBackIcon: {
-    marginRight: 12,
-    padding: 4,
-    alignSelf: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.sm,
   },
   optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   optionIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primaryLight,
+    width: 40,
+    height: 40,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.primaryLight + '15',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.md,
   },
   optionTitle: {
     fontSize: FontSize.md,
+    fontWeight: FontWeight.medium,
     color: Colors.textPrimary,
-    fontWeight: FontWeight.semibold,
   },
   logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: Spacing.xl,
+    marginVertical: Spacing.xxl,
+    padding: Spacing.lg,
     backgroundColor: Colors.errorLight,
     borderRadius: BorderRadius.md,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-    marginTop: Spacing.xl,
   },
   logoutText: {
-    color: Colors.error,
     fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.semibold,
+    color: Colors.error,
+    marginLeft: Spacing.sm,
   },
 });

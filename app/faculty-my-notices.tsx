@@ -3,6 +3,7 @@ import { Card } from '@/components/common/Card';
 import { Colors } from '@/constants/colors';
 import { auth, db } from '@/constants/firebase';
 import { FontSize, FontWeight, Spacing } from '@/constants/spacing';
+import { useSavedNoticeIds } from '@/utils/useSavedNoticeIds';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -26,6 +27,7 @@ export default function FacultyMyNotices() {
   const [selectedStatus, setSelectedStatus] = useState<'approved' | 'pending' | 'rejected' | 'draft'>('approved');
   const [notices, setNotices] = useState<MyNotice[]>([]);
   const [loading, setLoading] = useState(true);
+  const savedNoticeIds = useSavedNoticeIds();
 
   const noticeStatuses = [
     { key: 'approved', label: 'Approved', color: Colors.success, bg: Colors.successLight },
@@ -103,7 +105,12 @@ export default function FacultyMyNotices() {
                   >
                     {noticeStatuses.find(s => s.key === notice.status)?.label || notice.status}
                   </Text>
-                  <Ionicons name="bookmark-outline" size={18} color={Colors.textTertiary} style={{ marginLeft: 8 }} />
+                  <Ionicons
+                    name={savedNoticeIds.includes(notice.id) ? 'bookmark' : 'bookmark-outline'}
+                    size={18}
+                    color={savedNoticeIds.includes(notice.id) ? Colors.primary : Colors.textTertiary}
+                    style={{ marginLeft: 8 }}
+                  />
                   <Ionicons name="eye-outline" size={18} color={Colors.primary} style={{ marginLeft: 8 }} />
                 </View>
               </TouchableOpacity>
