@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { Image } from 'react-native';
 
 import { signupUser } from "@/components/auth/authHelpers";
 import React, { useState } from "react";
@@ -144,10 +145,9 @@ export default function SignupScreen() {
             </TouchableOpacity>
             <View style={styles.logoContainer}>
               <View style={styles.logo}>
-                <Ionicons
-                  name="notifications"
-                  size={32}
-                  color={Colors.primary}
+                <Image
+                  source={require('../assets/images/app-icon.png')}
+                  style={{ width: 48, height: 48, resizeMode: 'contain' }}
                 />
               </View>
             </View>

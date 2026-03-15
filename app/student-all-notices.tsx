@@ -97,9 +97,7 @@ export default function StudentAllNotices() {
               <TouchableOpacity onPress={() => router.push({ pathname: '/student-notice-detail', params: { id: notice.id } })}>
                 <Text style={styles.noticeTitle}>{notice.title}</Text>
                 <Text style={styles.noticeDesc} numberOfLines={2}>{notice.description}</Text>
-                <View style={styles.noticeMeta}>
-                  <Text style={[styles.statusBadge, { backgroundColor: Colors.successLight, color: Colors.success }]}>Approved</Text>
-                </View>
+                {/* No status badge for students, only show meta if needed */}
               </TouchableOpacity>
             </Card>
           ))

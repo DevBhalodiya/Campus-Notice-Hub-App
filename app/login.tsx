@@ -3,14 +3,14 @@ import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
 import { Colors } from '@/constants/colors';
 import { BorderRadius, FontSize, FontWeight, Spacing } from '@/constants/spacing';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Image } from 'react-native';
 
+import { loginUser, resendVerificationEmail } from '@/components/auth/authHelpers';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { loginUser, resendVerificationEmail, UserRole } from '@/components/auth/authHelpers';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -76,7 +76,10 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <View style={styles.logo}>
-                <Ionicons name="notifications" size={32} color={Colors.primary} />
+                <Image
+                  source={require('../assets/images/app-icon.png')}
+                  style={{ width: 48, height: 48, resizeMode: 'contain' }}
+                />
               </View>
             </View>
             <Text style={styles.title}>Welcome Back</Text>
