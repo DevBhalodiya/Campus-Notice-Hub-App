@@ -2,10 +2,10 @@ import { getCurrentUserRole } from "@/components/auth/authHelpers";
 import { auth, db } from "@/constants/firebase";
 import { getSigningUp } from "@/utils/authStateManager";
 import {
-  addNotificationResponseListener,
-  configureAndroidChannel,
-  getExpoPushToken,
-  requestNotificationPermission,
+    addNotificationResponseListener,
+    configureAndroidChannel,
+    getExpoPushToken,
+    requestNotificationPermission,
 } from "@/utils/notifications";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -65,7 +65,7 @@ export default function RootLayout() {
 
       if (!user) {
         console.log("[LAYOUT] No user, redirecting to login");
-        if (segments[0] !== "login" && segments[0] !== "signup") {
+        if (segments[0] !== "login" && segments[0] !== "signup" && segments[0] !== "splash") {
           router.replace("/login");
         }
         setChecking(false);
@@ -135,6 +135,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="splash" />
         <Stack.Screen name="login" />
         <Stack.Screen name="signup" />
         <Stack.Screen name="student-home" />
