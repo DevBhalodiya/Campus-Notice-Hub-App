@@ -16,17 +16,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "plugins": [
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/app-icon.png",
-          "color": "#6366F1",
-          "defaultChannel": "default",
-          "sounds": []
-        }
-      ]
-    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
